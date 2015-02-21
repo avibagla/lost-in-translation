@@ -2,9 +2,14 @@ class IBM_Model_1:
 	'''Class which trains IBM Model 1 and allows for testing'''
 
 	def __init__(self):
-		self.englishTrainList = loadList('./es-en/train/europarl-v7.es-en.en')
-		self.spanishTrainList = loadList('./es-en/train/europarl-v7.es-en.es')
-		print len(self.englishTrainList)
+		self.englishCorpus = loadList('./es-en/train/europarl-v7.es-en.en')
+		self.spanishCorpus = loadList('./es-en/train/europarl-v7.es-en.es')
+		self.englishVocabulary = set()
+		self.spanishVocabulary = set()
+		for i, sentence in enumerate(self.englishCorpus):
+			self.englishVocabulary |= set(self.englishCorpus[i].split())
+			self.spanishVocabulary |= set(self.spanishCorpus[i].split())
+
 
 	def train(self):
 		pass
