@@ -7,7 +7,17 @@ class IBM_Model_1:
 	def train(self):
 		pass
 
-	def EMOneInstance(expectationList, primaryLanguage, secondaryLanguage):
+	def EMOneInstance(expectationList, primaryLanguageVocab, secondaryLanguageVocab):
+		probabalityGrid = [][]
+		alignmentProbabilities = Estep([{"green house", "casa verde"}, {"the house", "la casa"}], probabalityGrid)
+		Mstep([alignmentProbabilities, probabalityGrid])
+		return probabalityGrid
+
+	def Estep(trainingPhrases, translationProbGrid):
+		alignmentProbabilities = []
+		return alignmentProbabilities
+
+	def Mstep(alignmentProbabilities, trandlationProbGrid):
 		pass
 
 
