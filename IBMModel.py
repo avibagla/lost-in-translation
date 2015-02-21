@@ -30,3 +30,10 @@ def loadList(file_name):
     with open(file_name) as f:
         l = [line.strip() for line in f]
     return l
+
+
+
+def main():
+	IBM_Model = IBM_Model_1()
+
+main()
