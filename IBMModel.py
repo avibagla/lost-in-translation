@@ -1,5 +1,5 @@
 class IBM_Model_1:
-	'''Class which trains IBM Model 1 and allows for testing'''
+	"""Class which trains IBM Model 1 and allows for testing"""
 
 	def __init__(self):
 		self.englishCorpus = loadList('./es-en/train/europarl-v7.es-en.en')
@@ -21,10 +21,12 @@ class IBM_Model_1:
 		return probabalityGrid
 
 	def Estep(trainingPhrases, translationProbGrid):
+		"""Runs the Expectation Step of the IBM Model 1 algorithm"""
 		alignmentProbabilities = []
 		return alignmentProbabilities
 
 	def Mstep(alignmentProbabilities, trandlationProbGrid):
+		"""Runs the Maximization step of the IBM Model 1 algorithm"""
 		pass
 
 
