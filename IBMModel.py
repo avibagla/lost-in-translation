@@ -18,10 +18,10 @@ class IBM_Model_1:
 		spanishCountDict = {}
 		countInv = 1./len(self.spanishVocabulary)
 		for word in self.spanishVocabulary:
-			spanishVocabulary[word] = countInv
+			spanishCountDict[word] = countInv
 		self.translate = {}
 		for word in self.englishVocabulary:
-			self.translate[word] = spanishVocabulary.copy()
+			self.translate[word] = spanishCountDict.copy()
 
 
 	def EMOneInstance(expectationList, primaryLanguageVocab, secondaryLanguageVocab):
