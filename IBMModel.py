@@ -24,19 +24,19 @@ class IBM_Model_1:
 			self.translate[word] = spanishVocabulary.copy()
 
 
-	def EMOneInstance(expectationList, primaryLanguageVocab, secondaryLanguageVocab):
+	def EMOneInstance(self, expectationList, primaryLanguageVocab, secondaryLanguageVocab):
 
-		Mstep([alignmentProbabilities, probabalityGrid])
+		Mstep(alignmentProbabilities, probabalityGrid)
 		return probabalityGrid
 
-	def Estep(trainingPhrases, translationProbGrid):
+	def Estep(self, trainingPhrases, translationProbGrid):
 		"""Runs the Expectation Step of the IBM Model 1 algorithm"""
 		for englishSentence, foreignSentence in trainingPhrases:
 			#We first need to compute P(a, f |e) by multiplying all the t probabilities, following
 			pass
 		return alignmentProbabilities
 
-	def Mstep(alignmentProbabilities, translationProbGrid):
+	def Mstep(self, alignmentProbabilities, translationProbGrid):
 		"""Runs the Maximization step of the IBM Model 1 algorithm"""
 		pass
 
