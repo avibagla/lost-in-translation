@@ -29,6 +29,7 @@ def loadList(file_name):
     """Taken from pa5"""
     with open(file_name) as f:
         l = [line.strip() for line in f]
+    f.close()
     return l
 
 
