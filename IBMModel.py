@@ -1,5 +1,7 @@
+from collections import defaultdict
 class IBM_Model_1:
 	"""Class which trains IBM Model 1 and allows for testing"""
+
 
 	def __init__(self):
 		self.englishCorpus = loadList('./es-en/train/europarl-v7.es-en.en')
@@ -12,17 +14,26 @@ class IBM_Model_1:
 
 
 	def train(self):
-		pass
+		#alignmentProbabilities = Estep([{"green house", "casa verde"}, {"the house", "la casa"}], probabalityGrid)
+		spanishCountDict = {}
+		countInv = 1./len(self.spanishVocabulary)
+		for word in self.spanishVocabulary:
+			spanishVocabulary[word] = countInv
+		self.translate = {}
+		for word in self.englishVocabulary:
+			self.translate[word] = spanishVocabulary.copy()
+
 
 	def EMOneInstance(expectationList, primaryLanguageVocab, secondaryLanguageVocab):
-		probabalityGrid = {}
-		alignmentProbabilities = Estep([{"green house", "casa verde"}, {"the house", "la casa"}], probabalityGrid)
+
 		Mstep([alignmentProbabilities, probabalityGrid])
 		return probabalityGrid
 
 	def Estep(trainingPhrases, translationProbGrid):
 		"""Runs the Expectation Step of the IBM Model 1 algorithm"""
-		alignmentProbabilities = []
+		for englishSentence, foreignSentence in trainingPhrases:
+			#We first need to compute P(a, f |e) by multiplying all the t probabilities, following
+			pass
 		return alignmentProbabilities
 
 	def Mstep(alignmentProbabilities, trandlationProbGrid):
