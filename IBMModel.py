@@ -36,7 +36,7 @@ class IBM_Model_1:
 			pass
 		return alignmentProbabilities
 
-	def Mstep(alignmentProbabilities, trandlationProbGrid):
+	def Mstep(alignmentProbabilities, translationProbGrid):
 		"""Runs the Maximization step of the IBM Model 1 algorithm"""
 		pass
 
