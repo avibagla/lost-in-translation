@@ -10,4 +10,6 @@ class IBM_Model_1:
 	def EMOneInstance(expectationList, primaryLanguage, secondaryLanguage):
 		pass
 
-	
+
+
+def loadList()
