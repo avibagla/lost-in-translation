@@ -1,5 +1,8 @@
+import time
+from collections import defaultdict
 class IBM_Model_1:
 	"""Class which trains IBM Model 1 and allows for testing"""
+
 
 	def __init__(self):
 		self.englishCorpus = loadList('./es-en/train/europarl-v7.es-en.en')
@@ -9,23 +12,40 @@ class IBM_Model_1:
 		for i, sentence in enumerate(self.englishCorpus):
 			self.englishVocabulary |= set(self.englishCorpus[i].split())
 			self.spanishVocabulary |= set(self.spanishCorpus[i].split())
+		self.englishToIndex = {}
+		self.spanishToIndex = {}
+		countInv = 1./(len(self.spanishVocabulary)*len(self.englishVocabulary))
+		self.translate = [[countInv]*len(self.spanishVocabulary) for i in range(len(self.englishVocabulary))]
+		i = 0
+		for word in self.englishVocabulary:
+			self.englishToIndex[word] = i
+			i+=1
+		i = 0
+		for word in self.spanishVocabulary:
+			self.spanishToIndex[word] = i
+			i+=1
 
 
 	def train(self):
 		pass
 
-	def EMOneInstance(expectationList, primaryLanguageVocab, secondaryLanguageVocab):
-		probabalityGrid = {}
-		alignmentProbabilities = Estep([{"green house", "casa verde"}, {"the house", "la casa"}], probabalityGrid)
-		Mstep([alignmentProbabilities, probabalityGrid])
-		return probabalityGrid
 
-	def Estep(trainingPhrases, translationProbGrid):
+
+
+
+
+	def EMOneInstance(self, expectationList, primaryLanguageVocab, secondaryLanguageVocab):
+
+		return Mstep(alignmentProbabilities, probabalityGrid)
+
+	def Estep(self, trainingPhrases, translationProbGrid):
 		"""Runs the Expectation Step of the IBM Model 1 algorithm"""
-		alignmentProbabilities = []
+		for englishSentence, foreignSentence in trainingPhrases:
+			#We first need to compute P(a, f |e) by multiplying all the t probabilities, following
+			pass
 		return alignmentProbabilities
 
-	def Mstep(alignmentProbabilities, trandlationProbGrid):
+	def Mstep(self, alignmentProbabilities, translationProbGrid):
 		"""Runs the Maximization step of the IBM Model 1 algorithm"""
 		pass
 
@@ -42,6 +62,8 @@ def loadList(file_name):
 
 
 def main():
+	start = time.clock()
 	IBM_Model = IBM_Model_1()
-
+	IBM_Model.train() 
+	print time.clock() - start
 main()
