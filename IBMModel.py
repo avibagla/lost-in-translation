@@ -15,13 +15,29 @@ class IBM_Model_1:
 
 	def train(self):
 		#alignmentProbabilities = Estep([{"green house", "casa verde"}, {"the house", "la casa"}], probabalityGrid)
-		spanishCountDict = {}
+		# spanishCountDict = {}
+		#
+		# for word in self.spanishVocabulary:
+		# 	spanishCountDict[word] = countInv
+		# self.translate = {}
+		# for word in self.englishVocabulary:
+		# 	self.translate[word] = spanishCountDict.copy()
+		self.englishToIndex = {}
+		self.spanishToIndex = {}
 		countInv = 1./(len(self.spanishVocabulary)*len(self.englishVocabulary))
-		for word in self.spanishVocabulary:
-			spanishCountDict[word] = countInv
-		self.translate = {}
+		self.translate = [[countInv]*len(self.spanishVocabulary) for i in range(len(self.englishVocabulary))]
+		i = 0
 		for word in self.englishVocabulary:
-			self.translate[word] = spanishCountDict.copy()
+			self.englishToIndex[word] = i
+			i+=1
+		i = 0
+		for word in self.spanishVocabulary:
+			self.spanishToIndex[word] = i
+			i+=1
+
+
+
+
 
 
 	def EMOneInstance(self, expectationList, primaryLanguageVocab, secondaryLanguageVocab):
@@ -54,6 +70,5 @@ def loadList(file_name):
 def main():
 	IBM_Model = IBM_Model_1()
 	IBM_Model.train()
-	print "done"
 
 main()
