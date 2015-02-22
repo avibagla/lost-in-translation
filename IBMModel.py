@@ -61,7 +61,7 @@ class IBM_Model_1:
 					newForeignSentence.pop(i)
 					transProbWithFixedEF = self.findSentenceTranslationProb(englishSentence, newForeignSentence)
 					t_ef = self.translate[self.englishToIndex[e]][self.spanishToIndex[f]] 
-					newTranslate[self.englishToIndex[e]][self.spanishToIndex[f]] += t_ef*transProbWithFixedEF/translationProbability
+					newTranslate[self.englishToIndex[e]][self.spanishToIndex[f]] += (t_ef*transProbWithFixedEF/translationProbability if translationProbability > 0 else 0)
 					#print e,f, t_ef*transProbWithFixedEF/translationProbability
 		self.translate = newTranslate
 		#print self.translate
