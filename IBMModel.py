@@ -14,14 +14,6 @@ class IBM_Model_1:
 
 
 	def train(self):
-		#alignmentProbabilities = Estep([{"green house", "casa verde"}, {"the house", "la casa"}], probabalityGrid)
-		# spanishCountDict = {}
-		#
-		# for word in self.spanishVocabulary:
-		# 	spanishCountDict[word] = countInv
-		# self.translate = {}
-		# for word in self.englishVocabulary:
-		# 	self.translate[word] = spanishCountDict.copy()
 		self.englishToIndex = {}
 		self.spanishToIndex = {}
 		countInv = 1./(len(self.spanishVocabulary)*len(self.englishVocabulary))
