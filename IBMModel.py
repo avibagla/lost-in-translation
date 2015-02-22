@@ -1,3 +1,4 @@
+import time
 from collections import defaultdict
 class IBM_Model_1:
 	"""Class which trains IBM Model 1 and allows for testing"""
@@ -11,9 +12,6 @@ class IBM_Model_1:
 		for i, sentence in enumerate(self.englishCorpus):
 			self.englishVocabulary |= set(self.englishCorpus[i].split())
 			self.spanishVocabulary |= set(self.spanishCorpus[i].split())
-
-
-	def train(self):
 		self.englishToIndex = {}
 		self.spanishToIndex = {}
 		countInv = 1./(len(self.spanishVocabulary)*len(self.englishVocabulary))
@@ -26,6 +24,10 @@ class IBM_Model_1:
 		for word in self.spanishVocabulary:
 			self.spanishToIndex[word] = i
 			i+=1
+
+
+	def train(self):
+		pass
 
 
 
@@ -60,7 +62,8 @@ def loadList(file_name):
 
 
 def main():
+	start = time.clock()
 	IBM_Model = IBM_Model_1()
 	IBM_Model.train() 
-
+	print time.clock() - start
 main()
