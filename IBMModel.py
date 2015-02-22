@@ -1,3 +1,4 @@
+import time
 from collections import defaultdict
 englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'../es-en/train/small.en' 
 spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' # '../es-en/train/small.es'
@@ -94,6 +95,8 @@ def loadList(file_name):
 
 
 def main():
+	start = time.clock()
 	IBM_Model = IBM_Model_1()
 	IBM_Model.train() 
+	print time.clock() - start
 main()
