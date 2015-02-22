@@ -17,10 +17,13 @@ class IBM_Model_1:
 		for i, sentence in enumerate(self.englishCorpus):
 			self.englishVocabulary |= set(self.englishCorpus[i].split())
 			self.spanishVocabulary |= set(self.spanishCorpus[i].split())
+<<<<<<< HEAD
 		self.englishVocabulary.add(self.null)
 
 
 	def train(self):
+=======
+>>>>>>> 25658969b7efe77ecb27c0e1284a4bb582c54ac3
 		self.englishToIndex = {}
 		self.spanishToIndex = {}
 		countInv = 1./(len(self.spanishVocabulary)*len(self.englishVocabulary))
@@ -33,48 +36,51 @@ class IBM_Model_1:
 		for word in self.spanishVocabulary:
 			self.spanishToIndex[word] = i
 			i+=1
+<<<<<<< HEAD
 		self.Estep(zip(self.englishCorpus, self.spanishCorpus))
 		self.Mstep()
 		# for f in self.spanishVocabulary:
 		# 	for e in self.englishVocabulary:
 		# 		print e,f,self.translate[self.englishToIndex[e]][self.spanishToIndex[f]]
+=======
 
 
+	def train(self):
+		pass
+
+
+
+>>>>>>> 25658969b7efe77ecb27c0e1284a4bb582c54ac3
+
+
+
+	def EMOneInstance(self, expectationList, primaryLanguageVocab, secondaryLanguageVocab):
+
+		return Mstep(alignmentProbabilities, probabalityGrid)
 
 	def Estep(self, trainingPhrases):
-		"""
-			Runs the Expectation Step of the IBM Model 1 algorithm
-			i.e. 
-			for each sentence pair
-				for each e in E and f in F
-					Add the total contribution of the sentences E,F to the word pair: tranlate(e,f)
-			"""
+		"""Runs the Expectation Step of the IBM Model 1 algorithm"""
 		newTranslate = [[0]*len(self.spanishVocabulary) for i in range(len(self.englishVocabulary))]
 		for englishSentence, foreignSentence in trainingPhrases:
-			# Tokenize sentences and add NULL to englishSentence
 			englishSentence = englishSentence.split()
 			englishSentence.append(self.null)
 			foreignSentence = foreignSentence.split()
-
-			translationProbability = self.findSentenceTranslationProb(englishSentence, foreignSentence)				# O(|F||E|)
+			#We first need to compute P(a, f |e) by multiplying all the t probabilities, following
+			translationProbability = self.findSentenceTranslationProb(englishSentence, foreignSentence)
 			for i in range(len(foreignSentence)):
 				for e in englishSentence:
 					f = foreignSentence[i]
-					newForeignSentence = list(foreignSentence) 
-					newForeignSentence.pop(i) # Splicing is faster, but that's not the bottleneck here
-
-					transProbWithFixedEF = self.findSentenceTranslationProb(englishSentence, newForeignSentence)	# O(|F-1||E|)
+					newForeignSentence = list(foreignSentence)
+					newForeignSentence.pop(i)
+					transProbWithFixedEF = self.findSentenceTranslationProb(englishSentence, newForeignSentence)
 					t_ef = self.translate[self.englishToIndex[e]][self.spanishToIndex[f]] 
-					newTranslate[self.englishToIndex[e]][self.spanishToIndex[f]] += (t_ef*transProbWithFixedEF/translationProbability if translationProbability > 0 else 0)
+					newTranslate[self.englishToIndex[e]][self.spanishToIndex[f]] += t_ef*transProbWithFixedEF/translationProbability
 					#print e,f, t_ef*transProbWithFixedEF/translationProbability
 		self.translate = newTranslate
 		#print self.translate
 
 	def Mstep(self):
-		"""
-			Runs the Maximization step of the IBM Model 1 algorithm
-			i.e. normalizes each row
-		"""
+		"""Runs the Maximization step of the IBM Model 1 algorithm"""
 		for i in range(len(self.englishVocabulary)):
 			rowTotal = 0
 			for j in range(len(self.spanishVocabulary)):
@@ -83,11 +89,6 @@ class IBM_Model_1:
 				self.translate[i][j]/=rowTotal
 
 	def findSentenceTranslationProb(self, englishSentence, foreignSentence):
-		""" 
-			Because we can view the multisum (over all alignments) of products of t(f|e) 
-			as the product (over all f) of the sum (over all e) of t(f|e), 
-			we improve the time cost over the definition to O(|E||F|) from O(|F||E|**|F|)
-		"""
 		normalizationFactor = 1.
 		for f in foreignSentence:
 			insideSum = 0
@@ -110,5 +111,8 @@ def main():
 	start = time.clock()
 	IBM_Model = IBM_Model_1()
 	IBM_Model.train() 
+<<<<<<< HEAD
+=======
 	print time.clock() - start
+>>>>>>> 25658969b7efe77ecb27c0e1284a4bb582c54ac3
 main()
