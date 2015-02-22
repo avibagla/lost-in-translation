@@ -69,6 +69,6 @@ def loadList(file_name):
 
 def main():
 	IBM_Model = IBM_Model_1()
-	IBM_Model.train()
+	IBM_Model.train() 
 
 main()
