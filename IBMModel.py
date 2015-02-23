@@ -23,7 +23,7 @@ class IBM_Model_1:
 	def train(self):
 		self.englishToIndex = {}
 		self.spanishToIndex = {}
-		countInv = 1./(len(self.spanishVocabulary)*len(self.englishVocabulary))
+		countInv = 1./(len(self.spanishVocabulary))
 		self.translate = [[countInv]*len(self.spanishVocabulary) for i in range(len(self.englishVocabulary))]
 		i = 0
 		for word in self.englishVocabulary:
@@ -33,8 +33,11 @@ class IBM_Model_1:
 		for word in self.spanishVocabulary:
 			self.spanishToIndex[word] = i
 			i+=1
+		print "table is built"
 		self.Estep(zip(self.englishCorpus, self.spanishCorpus))
+		print "E Step completed"
 		self.Mstep()
+		print "M Step completed"
 		# for f in self.spanishVocabulary:
 		# 	for e in self.englishVocabulary:
 		# 		print e,f,self.translate[self.englishToIndex[e]][self.spanishToIndex[f]]
@@ -73,7 +76,7 @@ class IBM_Model_1:
 			for j in range(len(self.spanishVocabulary)):
 				rowTotal += self.translate[i][j]
 			for j in range(len(self.spanishVocabulary)):
-				self.translate[i][j]/=rowTotal
+				self.translate[i][j]/= float(rowTotal)
 
 	def findSentenceTranslationProb(self, englishSentence, foreignSentence):
 		normalizationFactor = 1.
@@ -84,8 +87,13 @@ class IBM_Model_1:
 			normalizationFactor *= insideSum
 		return normalizationFactor
 
+	def predict(self, inputSentence):
+		"""Takes in a foreign sentence and uses predictions to determine the highest liklihood sentence with our MT"""
+		pass
+
+
 def loadList(file_name):
-    """Loads text files as lists of lines. Used in evaluation."""
+    """Loads text files as lists of lines."""
     """Taken from pa5"""
     with open(file_name) as f:
         l = [line.strip() for line in f]
