@@ -53,23 +53,22 @@ class IBM_Model_1:
 					Add the total contribution of the sentences E,F to the word pair: tranlate(e,f)
 			"""
 		newTranslate = [[0]*len(self.spanishVocabulary) for i in range(len(self.englishVocabulary))]
+		self.totalF = [0 for i in range(len(self.spanishVocabulary))]
+
 		for englishSentence, foreignSentence in trainingPhrases:
 			# Tokenize sentences and add NULL to englishSentence
 			englishSentence = englishSentence.split()
 			englishSentence.append(self.null)
 			foreignSentence = foreignSentence.split()
 
-			translationProbability = self.findSentenceTranslationProb(englishSentence, foreignSentence)				# O(|F||E|)
-			for i in range(len(foreignSentence)):
-				for e in englishSentence:
-					f = foreignSentence[i]
-					newForeignSentence = list(foreignSentence) 
-					newForeignSentence.pop(i) # Splicing is faster, but that's not the bottleneck here
-
-					transProbWithFixedEF = self.findSentenceTranslationProb(englishSentence, newForeignSentence)	# O(|F-1||E|)
-					t_ef = self.translate[self.englishToIndex[e]][self.spanishToIndex[f]] 
-					newTranslate[self.englishToIndex[e]][self.spanishToIndex[f]] += (t_ef*transProbWithFixedEF/translationProbability if translationProbability > 0 else 0)
-					#print e,f, t_ef*transProbWithFixedEF/translationProbability
+			for e in englishSentence:
+				sTotalE = 0
+				for f in foreignSentence:
+					sTotalE += self.translate[self.englishToIndex[e]][self.spanishToIndex[f]] 
+				for f in foreignSentence:
+					weightedCount = self.translate[self.englishToIndex[e]][self.spanishToIndex[f]]/sTotalE
+					newTranslate[self.englishToIndex[e]][self.spanishToIndex[f]] += weightedCount
+					self.totalF[self.spanishToIndex[f]] += weightedCount
 		self.translate = newTranslate
 		#print self.translate
 
@@ -79,11 +78,8 @@ class IBM_Model_1:
 			i.e. normalizes each row
 		"""
 		for i in range(len(self.englishVocabulary)):
-			rowTotal = 0
 			for j in range(len(self.spanishVocabulary)):
-				rowTotal += self.translate[i][j]
-			for j in range(len(self.spanishVocabulary)):
-				self.translate[i][j] = self.translate[i][j] / float(rowTotal)
+				self.translate[i][j] = self.translate[i][j] / self.totalF[j]
 
 	def findSentenceTranslationProb(self, englishSentence, foreignSentence):
 		""" 
@@ -119,4 +115,5 @@ def main():
 	IBM_Model = IBM_Model_1()
 	IBM_Model.train() 
 	print time.clock() - start
+	
 main()
