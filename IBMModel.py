@@ -76,7 +76,7 @@ class IBM_Model_1:
 			for j in range(len(self.spanishVocabulary)):
 				rowTotal += self.translate[i][j]
 			for j in range(len(self.spanishVocabulary)):
-				self.translate[i][j]/= float(rowTotal)
+				self.translate[i][j] = self.translate[i][j] / float(rowTotal)
 
 	def findSentenceTranslationProb(self, englishSentence, foreignSentence):
 		normalizationFactor = 1.
