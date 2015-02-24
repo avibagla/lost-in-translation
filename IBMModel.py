@@ -2,8 +2,8 @@ import time
 from collections import defaultdict
 from numpy import *
 
-englishCorpusFile =  '../es-en/train/small.en' # './es-en/train/europarl-v7.es-en.en'
-spanishCorpusFile =  '../es-en/train/small.es' # './es-en/train/europarl-v7.es-en.es'
+englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'../es-en/train/small.en'
+spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'../es-en/train/small.es'
 
 
 class IBM_Model_1:
@@ -22,7 +22,7 @@ class IBM_Model_1:
 		self.englishVocabulary.add(self.null)
 
 
-	def train(self):
+	def train(self, iterations):
 		start = time.clock()
 		self.englishToIndex = {}
 		self.spanishToIndex = {}
@@ -44,7 +44,7 @@ class IBM_Model_1:
 		start = time.clock()
 		self.Mstep()
 		print "M Step completed", time.clock() - start
-		for i in xrange(100):
+		for i in xrange(iterations - 1):
 			self.Estep(zip(self.englishCorpus, self.spanishCorpus))
 			self.Mstep()
 		# for f in self.spanishVocabulary:
@@ -66,7 +66,7 @@ class IBM_Model_1:
 
 		for englishSentence, foreignSentence in trainingPhrases:
 			# Tokenize sentences and add NULL to englishSentence
-			englishSentence = englishSentence.split()
+			englishSentence = englishSentence.split() + [self.null]
 			#englishSentence.append(self.null)
 			foreignSentence = foreignSentence.split()
 
@@ -125,7 +125,7 @@ def main():
 	# pool = multiprocessing.Pool(processes=cpus)
 	# pool.map(square, xrange(10000**2))
 	IBM_Model = IBM_Model_1()
-	IBM_Model.train() 
+	IBM_Model.train(100) 
 	print time.clock() - start
 
 	# start = time.clock()
