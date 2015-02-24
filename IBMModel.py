@@ -12,6 +12,7 @@ class IBM_Model_1:
 
 
 	def __init__(self):
+		"""Sets initial variables for our algorithm"""
 		self.englishCorpus = loadList(englishCorpusFile)
 		self.spanishCorpus = loadList(spanishCorpusFile)
 		self.englishVocabulary = set()
@@ -24,6 +25,7 @@ class IBM_Model_1:
 
 
 	def train(self, iterations):
+		"""Trains our IBM Model 1 by iterating through the E step and the M step."""
 		start = time.clock()
 		self.englishToIndex = {}
 		self.spanishToIndex = {}
@@ -47,11 +49,11 @@ class IBM_Model_1:
 		zippedCorpuses = zip(self.englishCorpus, self.spanishCorpus)
 		start = time.clock()
 		self.Estep(zippedCorpuses)
-		print "E Step completed", time.clock() - start
+		print "1 E Step completed", time.clock() - start
 		start = time.clock()
 		self.Mstep()
-		print "M Step completed", time.clock() - start
-		for i in xrange(1, iterations):
+		print "1 M Step completed", time.clock() - start
+		for i in xrange(2, iterations+1):
 			start = time.clock()
 			self.Estep(zippedCorpuses)
 			print i, "E Step completed", time.clock() - start
