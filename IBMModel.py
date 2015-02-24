@@ -27,16 +27,20 @@ class IBM_Model_1:
 		start = time.clock()
 		self.englishToIndex = {}
 		self.spanishToIndex = {}
+		self.indexToEnglish = ['']*len(self.englishVocabulary)
+		self.indexToSpanish = ['']*len(self.spanishVocabulary)
 		countInv = 1./(len(self.spanishVocabulary))
 		self.translate = empty( [len(self.englishVocabulary),len(self.spanishVocabulary)], dtype = float64 )
 		self.translate.fill(countInv)
 		i = 0
 		for word in self.englishVocabulary:
 			self.englishToIndex[word] = i
+			self.indexToEnglish[i] = word
 			i+=1
 		i = 0
 		for word in self.spanishVocabulary:
 			self.spanishToIndex[word] = i
+			self.indexToSpanish[i] = word
 			i+=1
 		print "table is built", time.clock() - start
 
@@ -114,6 +118,10 @@ class IBM_Model_1:
 		"""Takes in a foreign sentence and uses predictions to determine the highest liklihood sentence with our MT"""
 		pass
 
+	def saveTranslationToFile(self):
+		pass
+
+
 
 def loadList(file_name):
     """Loads text files as lists of lines."""
@@ -134,7 +142,7 @@ def main():
 	IBM_Model = IBM_Model_1()
 	IBM_Model.train(5) 
 	print time.clock() - start
-	pickle.dump(IBM_Model.translate, open('saved.p', 'wb'))
+	# pickle.dump(IBM_Model.translate, open('saved.p', 'wb'))
 
 
 	# start = time.clock()
