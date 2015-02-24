@@ -162,7 +162,7 @@ def main():
 	IBM_Model.train(100) 
 	print time.clock() - start
 	IBM_Model.saveTranslationToFile()
-	# pickle.dump(IBM_Model.translate, open('saved.p', 'wb'))
+	
 
 
 	# start = time.clock()
