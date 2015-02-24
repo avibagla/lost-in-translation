@@ -116,9 +116,15 @@ class IBM_Model_1:
 
 	def predict(self, inputSentence):
 		"""Takes in a foreign sentence and uses predictions to determine the highest liklihood sentence with our MT"""
-		pass
+		inputWords = inputSentence.split()
+		finalSentence = ''
+		for word in inputSentence:
+			if word in self.translationDictionary:
+				finalSentence += ' ' + self.translationDictionary[word]
+		return finalSentence
 
-	def saveTranslationToFile(self):
+
+	def buildTranslationDictionary(self):
 		print "Building translation dictionary"
 		start = time.clock()
 		self.translationDictionary = {}
@@ -128,15 +134,23 @@ class IBM_Model_1:
 			currentTranslation = ''
 			for eidx in range(len(self.translate)):
 				# print eidx, sidx
-				if self.translate[eidx][sidx] > maxProb:
+				if self.translate[eidx, sidx] > maxProb:
 					currentTranslation = self.indexToEnglish[eidx]
 					maxProb = self.translate[eidx, sidx]
 			self.translationDictionary[spanishWord] = currentTranslation
 		print "Finished building translationDictionary", time.clock() - start
+
+	def saveTranslationToFile(self):
+		"""Must be run after the translation system is trained"""
+		if translationDictionary not in self:
+			self.buildTranslationDictionary()
 		start = time.clock()
 		print "Saving to File"
 		pickle.dump(self.translationDictionary, open('translation_' + str(time.clock()), 'wb'))
 		print "File Saved", time.clock() - start
+
+	def readInTranslation(self, file_name):
+		self.translationDictionary = pickle.load(open(file_name, "rb"))
 
 
 
@@ -159,9 +173,16 @@ def main():
 	# pool = multiprocessing.Pool(processes=cpus)
 	# pool.map(square, xrange(10000**2))
 	IBM_Model = IBM_Model_1()
-	IBM_Model.train(100) 
+	# IBM_Model.train(100) 
+	IBM_Model.readInTranslation("translation_4141.32095")
+
+	spanishDevFile = loadList("./es-en/dev/newstest2012.es")
+	for sentence in spanishDevFile:
+		print sentence + "\n" + IBM_Model.predict(sentence)
+		print "\n\n"
+
 	print time.clock() - start
-	IBM_Model.saveTranslationToFile()
+	# IBM_Model.saveTranslationToFile()
 	
 
 
