@@ -1,7 +1,9 @@
 import time
 from collections import defaultdict
-englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'../es-en/train/small.en' 
-spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' # '../es-en/train/small.es'
+from numpy import *
+
+englishCorpusFile =  '../es-en/train/small.en' # './es-en/train/europarl-v7.es-en.en'
+spanishCorpusFile =  '../es-en/train/small.es' # './es-en/train/europarl-v7.es-en.es'
 
 
 class IBM_Model_1:
@@ -21,10 +23,12 @@ class IBM_Model_1:
 
 
 	def train(self):
+		start = time.clock()
 		self.englishToIndex = {}
 		self.spanishToIndex = {}
 		countInv = 1./(len(self.spanishVocabulary))
-		self.translate = [[countInv]*len(self.spanishVocabulary) for i in range(len(self.englishVocabulary))]
+		self.translate = empty( [len(self.englishVocabulary),len(self.spanishVocabulary)], dtype = float64 )
+		self.translate.fill(countInv)
 		i = 0
 		for word in self.englishVocabulary:
 			self.englishToIndex[word] = i
@@ -33,11 +37,16 @@ class IBM_Model_1:
 		for word in self.spanishVocabulary:
 			self.spanishToIndex[word] = i
 			i+=1
-		print "table is built"
+		print "table is built", time.clock() - start
+		start = time.clock()
 		self.Estep(zip(self.englishCorpus, self.spanishCorpus))
-		print "E Step completed"
+		print "E Step completed", time.clock() - start
+		start = time.clock()
 		self.Mstep()
-		print "M Step completed"
+		print "M Step completed", time.clock() - start
+		for i in xrange(100):
+			self.Estep(zip(self.englishCorpus, self.spanishCorpus))
+			self.Mstep()
 		# for f in self.spanishVocabulary:
 		# 	for e in self.englishVocabulary:
 		# 		print e,f,self.translate[self.englishToIndex[e]][self.spanishToIndex[f]]
@@ -51,35 +60,34 @@ class IBM_Model_1:
 			for each sentence pair
 				for each e in E and f in F
 					Add the total contribution of the sentences E,F to the word pair: tranlate(e,f)
-			"""
-		newTranslate = [[0]*len(self.spanishVocabulary) for i in range(len(self.englishVocabulary))]
-		self.totalF = [0 for i in range(len(self.spanishVocabulary))]
+		"""
+		newTranslate = 	zeros((len(self.englishVocabulary),len(self.spanishVocabulary)), dtype = float64)
+		self.totalF = 	zeros(len(self.spanishVocabulary), dtype = float64)
 
 		for englishSentence, foreignSentence in trainingPhrases:
 			# Tokenize sentences and add NULL to englishSentence
 			englishSentence = englishSentence.split()
-			englishSentence.append(self.null)
+			#englishSentence.append(self.null)
 			foreignSentence = foreignSentence.split()
 
 			for e in englishSentence:
 				sTotalE = 0
+				eidx = self.englishToIndex[e]
 				for f in foreignSentence:
-					sTotalE += self.translate[self.englishToIndex[e]][self.spanishToIndex[f]] 
+					sTotalE += self.translate[eidx, self.spanishToIndex[f]] 
 				for f in foreignSentence:
-					weightedCount = self.translate[self.englishToIndex[e]][self.spanishToIndex[f]]/sTotalE
-					newTranslate[self.englishToIndex[e]][self.spanishToIndex[f]] += weightedCount
-					self.totalF[self.spanishToIndex[f]] += weightedCount
+					sidx = self.spanishToIndex[f]
+					weightedCount = self.translate[eidx, sidx]/sTotalE
+					newTranslate[eidx, sidx] += weightedCount
+					self.totalF[sidx] += weightedCount
 		self.translate = newTranslate
-		#print self.translate
 
 	def Mstep(self):
 		"""
 			Runs the Maximization step of the IBM Model 1 algorithm
-			i.e. normalizes each row
+			i.e. normalizes each col
 		"""
-		for i in range(len(self.englishVocabulary)):
-			for j in range(len(self.spanishVocabulary)):
-				self.translate[i][j] = self.translate[i][j] / self.totalF[j]
+		self.translate = self.translate / self.totalF[newaxis,:] #makes use of broadcasting ^_^
 
 	def findSentenceTranslationProb(self, englishSentence, foreignSentence):
 		""" 
@@ -112,8 +120,25 @@ def loadList(file_name):
 
 def main():
 	start = time.clock()
+
+
+	# pool = multiprocessing.Pool(processes=cpus)
+	# pool.map(square, xrange(10000**2))
 	IBM_Model = IBM_Model_1()
 	IBM_Model.train() 
 	print time.clock() - start
+
+	# start = time.clock()
+	# pool = [square(x) for x in xrange(10000**2)]
+	# print time.clock() - start
+
+
 	
+	# pool = multiprocessing.Pool(processes=cpus)
+	# print pool.map(square, xrange(1000))
+	# # IBM_Model = IBM_Model_1()
+	# # IBM_Model.train() 
+	# print time.clock() - start
+
+
 main()
