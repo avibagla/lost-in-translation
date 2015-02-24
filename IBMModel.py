@@ -51,7 +51,7 @@ class IBM_Model_1:
 		start = time.clock()
 		self.Mstep()
 		print "M Step completed", time.clock() - start
-		for i in xrange(iterations - 1):
+		for i in xrange(1, iterations):
 			start = time.clock()
 			self.Estep(zippedCorpuses)
 			print i, "E Step completed", time.clock() - start
@@ -119,7 +119,26 @@ class IBM_Model_1:
 		pass
 
 	def saveTranslationToFile(self):
-		pass
+		print "Building translation dictionary"
+		start = time.clock()
+		self.translationDictionary = {}
+		for spanishWord in self.spanishVocabulary:
+			sidx = self.spanishToIndex[spanishWord]
+			maxProb = -inf
+			currentTranslation = ''
+			for eidx in range(len(self.translate)):
+				# print eidx, sidx
+				if self.translate[eidx][sidx] > maxProb:
+					currentTranslation = self.indexToEnglish[eidx]
+					maxProb = self.translate[eidx, sidx]
+			self.translationDictionary[spanishWord] = currentTranslation
+		print "Finished building translationDictionary", time.clock() - start
+		start = time.clock()
+		print "Saving to File"
+		pickle.dump(self.translationDictionary, open('translation_' + str(time.clock()), 'wb'))
+		print "File Saved", time.clock() - start
+
+
 
 
 
@@ -140,8 +159,9 @@ def main():
 	# pool = multiprocessing.Pool(processes=cpus)
 	# pool.map(square, xrange(10000**2))
 	IBM_Model = IBM_Model_1()
-	IBM_Model.train(5) 
+	IBM_Model.train(100) 
 	print time.clock() - start
+	IBM_Model.saveTranslationToFile()
 	# pickle.dump(IBM_Model.translate, open('saved.p', 'wb'))
 
 
