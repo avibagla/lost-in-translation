@@ -1,7 +1,7 @@
-import time
-from collections import defaultdict
-from numpy import *
-import cPickle as pickle
+import time #for debugging
+from collections import defaultdict #<3 dem defaults
+from numpy import * #fast as lightning
+import cPickle as pickle #file reading for python data in clean way
 
 englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'../es-en/train/small.en'
 spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'../es-en/train/small.es'
@@ -116,6 +116,7 @@ class IBM_Model_1:
 
 	def predict(self, inputSentence):
 		"""Takes in a foreign sentence and uses predictions to determine the highest liklihood sentence with our MT"""
+		"""Translation dictionary must be built before this method is called"""
 		inputWords = inputSentence.split()
 		finalSentence = ''
 		for word in inputWords:
