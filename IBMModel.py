@@ -1,6 +1,7 @@
 import time
 from collections import defaultdict
 from numpy import *
+import cPickle as pickle
 
 englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'../es-en/train/small.en'
 spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'../es-en/train/small.es'
@@ -38,15 +39,21 @@ class IBM_Model_1:
 			self.spanishToIndex[word] = i
 			i+=1
 		print "table is built", time.clock() - start
+
+		zippedCorpuses = zip(self.englishCorpus, self.spanishCorpus)
 		start = time.clock()
-		self.Estep(zip(self.englishCorpus, self.spanishCorpus))
+		self.Estep(zippedCorpuses)
 		print "E Step completed", time.clock() - start
 		start = time.clock()
 		self.Mstep()
 		print "M Step completed", time.clock() - start
 		for i in xrange(iterations - 1):
-			self.Estep(zip(self.englishCorpus, self.spanishCorpus))
+			start = time.clock()
+			self.Estep(zippedCorpuses)
+			print i, "E Step completed", time.clock() - start
+			start = time.clock()
 			self.Mstep()
+			print i, "M Step completed", time.clock() - start
 		# for f in self.spanishVocabulary:
 		# 	for e in self.englishVocabulary:
 		# 		print e,f,self.translate[self.englishToIndex[e]][self.spanishToIndex[f]]
@@ -125,8 +132,10 @@ def main():
 	# pool = multiprocessing.Pool(processes=cpus)
 	# pool.map(square, xrange(10000**2))
 	IBM_Model = IBM_Model_1()
-	IBM_Model.train(100) 
+	IBM_Model.train(5) 
 	print time.clock() - start
+	pickle.dump(IBM_Model.translate, open('saved.p', 'wb'))
+
 
 	# start = time.clock()
 	# pool = [square(x) for x in xrange(10000**2)]
