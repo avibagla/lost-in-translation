@@ -118,10 +118,10 @@ class IBM_Model_1:
 		"""Takes in a foreign sentence and uses predictions to determine the highest liklihood sentence with our MT"""
 		inputWords = inputSentence.split()
 		finalSentence = ''
-		for word in inputSentence:
+		for word in inputWords:
 			if word in self.translationDictionary:
-				finalSentence += ' ' + self.translationDictionary[word]
-		return finalSentence
+				finalSentence += (self.translationDictionary[word]+' ' if self.translationDictionary[word] != self.null else '')
+		return finalSentence[:-1]
 
 
 	def buildTranslationDictionary(self):
@@ -177,11 +177,11 @@ def main():
 	IBM_Model.readInTranslation("translation_4141.32095")
 
 	spanishDevFile = loadList("./es-en/dev/newstest2012.es")
+	translationOutput = open("machine_translated", 'wb')
 	for sentence in spanishDevFile:
-		print sentence + "\n" + IBM_Model.predict(sentence)
-		print "\n\n"
-
-	print time.clock() - start
+		translationOutput.write("%s\n"%IBM_Model.predict(sentence))
+	translationOutput.close()
+	print "Saved", time.clock() - start
 	# IBM_Model.saveTranslationToFile()
 	
 
