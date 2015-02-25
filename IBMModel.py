@@ -23,6 +23,7 @@ class IBM_Model_1:
 		self.englishVocabulary = set()
 		self.spanishVocabulary = set()
 		self.null = "<<NULL>>"
+		self.lm = lm()
 		for i, sentence in enumerate(self.englishCorpus):
 			self.englishVocabulary |= set(self.englishCorpus[i].lower().split())
 			self.spanishVocabulary |= set(self.spanishCorpus[i].lower().split())
@@ -32,6 +33,7 @@ class IBM_Model_1:
 		"""
 			Trains our IBM Model 1 by iterating through the E step and the M step.
 			EM will run at minimum one time, and at most 'iterations' times.
+			Trains our language model on the English Corpus
 		"""
 		start = time.clock()
 		self.englishToIndex = {}
@@ -41,6 +43,9 @@ class IBM_Model_1:
 		countInv = 1./(len(self.spanishVocabulary))
 		self.translate = empty( [len(self.englishVocabulary),len(self.spanishVocabulary)], dtype = float64 )
 		self.translate.fill(countInv)
+
+		#train the language model on English
+		self.lm.train(self.englishCorpus)
 
 		#Create Auxilliary Mapping dictionaries so our multidimensional array can be kept small
 		i = 0
@@ -244,6 +249,11 @@ class IBM_Model_1:
 		self.translationDictionary = pickle.load(open(file_name, "rb"))
 
 
+	def getProbabilityOfSentence(self, inputSentence):
+		"""
+			Returns log probability of the sentence returned
+		"""
+		return self.lm.score(inputSentence.split())
 
 
 
