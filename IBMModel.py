@@ -137,11 +137,11 @@ class IBM_Model_1:
 		inputWords = inputSentence.split()
 		finalSentence = ''
 		for word in inputWords:
-			if word.lower() in self.translationDictionary:
-				word = word.lower()
+			word = word.lower()
+			if word in self.translationDictionary:
 				finalSentence += (self.translationDictionary[word]+' ' if self.translationDictionary[word] != self.null else '')
 			else:
-				finalSentence += word.lower()+' '
+				finalSentence += word+' '
 		return finalSentence[:-1]
 
 
