@@ -5,7 +5,7 @@ import cPickle as pickle #file reading for python data in clean way
 import sys #for argument input
 import nltk #nlp awesomesauce
 import datetime
-import StupidBackoffLanguageModel
+from StupidBackoffLanguageModel import StupidBackoffLanguageModel
 
 
 englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'./es-en/train/small.en' #
