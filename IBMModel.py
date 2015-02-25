@@ -4,8 +4,8 @@ from numpy import * #fast as lightning
 import cPickle as pickle #file reading for python data in clean way
 import sys #for argument input
 
-englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'../es-en/train/small.en'
-spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'../es-en/train/small.es'
+englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'./es-en/train/small.en' #
+spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.es' #
 
 
 class IBM_Model_1:
@@ -143,18 +143,21 @@ class IBM_Model_1:
 	def buildTranslationDictionary(self):
 		print "Building translation dictionary"
 		start = time.clock()
+		bestEnglishTranslation = argmax(self.translate, axis=0)
 		self.translationDictionary = {}
 		for spanishWord in self.spanishVocabulary:
 			sidx = self.spanishToIndex[spanishWord]
-			maxProb = -inf
-			currentTranslation = ''
-			for eidx in range(len(self.translate)):
-				# print eidx, sidx
-				if self.translate[eidx, sidx] > maxProb:
-					currentTranslation = self.indexToEnglish[eidx]
-					maxProb = self.translate[eidx, sidx]
-			self.translationDictionary[spanishWord] = currentTranslation
+			self.translationDictionary[spanishWord] = self.indexToEnglish[int(bestEnglishTranslation[sidx])]
 		print "Finished building translationDictionary", time.clock() - start
+		# 	maxProb = -inf
+		# 	currentTranslation = ''
+		# 	for eidx in range(len(self.translate)):
+		# 		# print eidx, sidx
+		# 		if self.translate[eidx, sidx] > maxProb:
+		# 			currentTranslation = self.indexToEnglish[eidx]
+		# 			maxProb = self.translate[eidx, sidx]
+		# 	self.translationDictionary[spanishWord] = currentTranslation
+		# print "Finished building translationDictionary", time.clock() - start
 
 	def saveTranslationToFile(self):
 		"""
@@ -162,12 +165,14 @@ class IBM_Model_1:
 			Pickle to save the translation dictionary to a file.
 			Pre-condition: Must be run after the translation system is trained
 		"""
-		if translationDictionary not in self:
+		translationFileName = 'translation_' + str(time.clock())
+		if not hasattr(self, 'translationDictionary'):
 			self.buildTranslationDictionary()
 		start = time.clock()
 		print "Saving to File"
-		pickle.dump(self.translationDictionary, open('translation_' + str(time.clock()), 'wb'))
-		print "File Saved", time.clock() - start
+		pickle.dump(self.translationDictionary, open(translationFileName, 'wb'))
+		print "File Saved", translationFileName
+		return translationFileName
 
 	def readInTranslation(self, file_name):
 		"""
@@ -200,15 +205,16 @@ def main():
 	# pool = multiprocessing.Pool(processes=cpus)
 	# pool.map(square, xrange(10000**2))
 	IBM_Model = IBM_Model_1()
-	IBM_Model.train(100) 
+	IBM_Model.train(1) 
 	print "Saved", time.clock() - start
-	IBM_Model.saveTranslationToFile()
+	translationFileName = IBM_Model.saveTranslationToFile()
 
-	# spanishDevFile = loadList("./es-en/dev/newstest2012.es")
-	# translationOutput = open("machine_translated", 'wb')
-	# for sentence in spanishDevFile:
-	# 	translationOutput.write("%s\n"%IBM_Model.predict(sentence))
-	# translationOutput.close()
+	translator = IBM_Model.readInTranslation(translationFileName)
+	spanishDevFile = loadList("./es-en/dev/newstest2012.es")
+	translationOutput = open("machine_translated", 'wb')
+	for sentence in spanishDevFile:
+		translationOutput.write("%s\n"%IBM_Model.predict(sentence))
+	translationOutput.close()
 	
 	
 
