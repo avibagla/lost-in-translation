@@ -5,7 +5,7 @@ def fDiv(a, b):
 
 class CustomLanguageModel:
  
-  def __init__(self, corpus):
+  def __init__(self):
     """Initialize your data structures in the constructor."""
     self.startToken = "<^>"
     self.UNK = "<NEIZVESTNOE>"
@@ -20,18 +20,19 @@ class CustomLanguageModel:
     self.unigramsAfter  = collections.defaultdict(lambda: set())
     self.total = 0
     self.backoffPenalizationFactor = math.log(0.4)
-    self.train(corpus)
+    # self.train(corpus)
 
   def train(self, corpus):
     """ Takes a corpus and trains your language model. 
         Compute any counts or other corpus statistics in this function.
     """  
     total = 0
-    for sentence in corpus.corpus:
+    for sentence in corpus:
         nextToLastToken = self.startToken
         lastToken = self.startToken
-        for datum in sentence.data:  
-            token = datum.word
+        sentence = sentence.split()
+        for word in sentence:  
+            token = word
             if nextToLastToken != self.startToken: 
                 self.trigramCounts[(nextToLastToken, lastToken, token)] += 1
                 #self.bigramsBefore[token].add((nextToLastToken, lastToken))
