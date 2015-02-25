@@ -6,6 +6,7 @@ import sys #for argument input
 import nltk #nlp awesomesauce
 import datetime
 from StupidBackoffLanguageModel import CustomLanguageModel as lm
+from Queue import PriorityQueue as pq
 
 englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'./es-en/train/small.en' #
 spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.es' #
@@ -114,11 +115,64 @@ class IBM_Model_1:
 
 	def generateKBestFromTM(self, k, foreignSentence):
 		generatedSentences = []
-		nthBestTranslationForWord = []*len(foreignSentence)
+		sentenceQueue = pq()
+		logprob = self.getTMSentenceTransLogProbFromNth(foreignSentence, [0]*len(foreignSentence))
+		sentenceQueue.put((logprob, [0]*len(foreignSentence)))
 		for i in xrange(k):
-			for word in foreignSentence:
-				pass
+			if sentenceQueue.empty(): break
+			ithLogProb, ithWordIndices = sentenceQueue.get()
+			generatedSentences.append( (ithWordIndices, ithLogProb) )
+			
+			for j in xrange(len(foreignSentence)): # And produce a new candidate for each sentence
+				f = foreignSentence[j]
+				if 	(f not in self.translationDictionary) or \
+						(ithWordIndices[j] == len(self.translationDictionary[f]) - 1): 
+						continue # No use checking these cases
+
+				newCandidateIndices = list(ithWordIndices)
+				newCandidateIndices[j] += 1
+				logprob = self.getTMSentenceTransLogProbFromNth(foreignSentence, newCandidateIndices)
+				sentenceQueue.put((logprob, newCandidateIndices))
+
+		for i in xrange(len(generatedSentences)):
+			nthBest, logProb = generatedSentences[i]
+			generatedSentences[i] = (self.englishSentenceUsing(foreignSentence, nthBest), logProb)
+
 		return generatedSentences
+
+	def englishSentenceUsing(self, foreignSentence, nthBest):
+		englishSentence = []
+		for j in xrange(len(foreignSentence)):
+			e = f = foreignSentence[j]
+			if f in self.translationDictionary:
+				e = self.translationDictionary[f][nthBest[j]][0]
+			if e != self.null:
+				englishSentence.append(e)
+		return englishSentence
+
+	def getTMSentenceTransLogProbFromEnglish(self, foreignSentence, englishSentence):
+		# Sentences must be same length (including <<NULL>>'s)
+		totalLogProb = 0
+		for i in xrange(len(foreignSentence)):
+			f = foreignSentence[i]
+			if f not in self.translationDictionary: continue # only calculate words we've seen
+			e = englishSentence[i]
+			logProb = 1
+			for index, (word, logProb) in enumerate(self.translationDictionary[f]):
+				if word == e:
+					break
+			if logProb > 0: logProb = -inf
+			totalLogProb += logProb
+		return totalLogProb
+
+	def getTMSentenceTransLogProbFromNth(self, foreignSentence, nthBest):
+		# Sentences must be same length (including <<NULL>>'s)
+		totalLogProb = 0
+		for i in xrange(len(foreignSentence)):
+			f = foreignSentence[i]
+			if f in self.translationDictionary: # only calculate words we've seen
+				totalLogProb += self.translationDictionary[foreignSentence[i]][nthBest[i]][1]
+		return totalLogProb
 
 	def predict(self, inputSentence):
 		"""
@@ -127,16 +181,19 @@ class IBM_Model_1:
 			Pre-condition: IBM Model training step is completed
 			Pre-condition: Translation dictionary must be built before this method is called
 		"""
-		inputWords = inputSentence.split()
-		finalSentence = ''
-		for word in inputWords:
-			if word.lower() in self.translationDictionary:
-				word = word.lower()
-				bestguess = self.translationDictionary[word][0][0]
-				finalSentence += (bestguess+' ' if bestguess != self.null else '')
-			else:
-				finalSentence += word.lower()+' '
-		return finalSentence[:-1]
+		inputWords = inputSentence.lower().split()
+		topk = self.generateKBestFromTM(1, inputWords)
+		#print topk
+		return " ".join(topk[0][0])
+		# finalSentence = ''
+		# for word in inputWords:
+		# 	if word.lower() in self.translationDictionary:
+		# 		word = word.lower()
+		# 		bestguess = self.translationDictionary[word][0][0]
+		# 		finalSentence += (bestguess+' ' if bestguess != self.null else '')
+		# 	else:
+		# 		finalSentence += word.lower()+' '
+		# return finalSentence[:-1]
 
 
 	def buildTranslationDictionary(self):
@@ -211,13 +268,12 @@ def main():
 	# pool = multiprocessing.Pool(processes=cpus)
 	# pool.map(square, xrange(10000**2))
 	IBM_Model = IBM_Model_1()
-	IBM_Model.train(1) 
-	print "Saved", time.clock() - start
-	translationFileName = IBM_Model.saveTranslationToFile()
-	#translationFileName = "translation_2015.02.25|01.18"
+	#IBM_Model.train(5) 
+	#print "Saved", time.clock() - start
+	#translationFileName = IBM_Model.saveTranslationToFile()
+	translationFileName = "translation_2015.02.25|03.04"
 	
 	translator = IBM_Model.readInTranslation(translationFileName)
-	print IBM_Model.translationDictionary["el"]
 
 	spanishDevFile = loadList("./es-en/dev/newstest2012.es")
 	translationOutput = open("machine_translated", 'wb')
