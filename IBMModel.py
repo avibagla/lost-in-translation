@@ -5,6 +5,7 @@ import cPickle as pickle #file reading for python data in clean way
 import sys #for argument input
 import nltk #nlp awesomesauce
 import datetime
+from StupidBackoffLanguageModel import CustomLanguageModel as lm
 
 englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'./es-en/train/small.en' #
 spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.es' #
@@ -111,19 +112,11 @@ class IBM_Model_1:
 		"""
 		self.translate = self.translate / self.totalF[newaxis,:] #makes use of broadcasting ^_^
 
-	def findSentenceTranslationProb(self, englishSentence, foreignSentence):
-		""" 
-			Because we can view the multisum (over all alignments) of products of t(f|e) 
-			as the product (over all f) of the sum (over all e) of t(f|e), 
-			we improve the time cost over the definition to O(|E||F|) from O(|F||E|**|F|)
-		"""
-		normalizationFactor = 1.
-		for f in foreignSentence:
-			insideSum = 0
-			for e in englishSentence:
-				insideSum += self.translate[self.englishToIndex[e]][self.spanishToIndex[f]] 
-			normalizationFactor *= insideSum
-		return normalizationFactor
+	def generateKBestFromTM(self, k, foreignSentence):
+		generatedSentences = []
+		for i in xrange(k):
+			for word in foreignSentence:
+		return generatedSentences
 
 	def predict(self, inputSentence):
 		"""
@@ -135,32 +128,28 @@ class IBM_Model_1:
 		inputWords = inputSentence.split()
 		finalSentence = ''
 		for word in inputWords:
-			word = word.lower()
-			if word in self.translationDictionary:
-				finalSentence += (self.translationDictionary[word]+' ' if self.translationDictionary[word] != self.null else '')
+			if word.lower() in self.translationDictionary:
+				word = word.lower()
+				bestguess = self.translationDictionary[word][0][0]
+				finalSentence += (bestguess+' ' if bestguess != self.null else '')
 			else:
-				finalSentence += word+' '
+				finalSentence += word.lower()+' '
 		return finalSentence[:-1]
 
 
 	def buildTranslationDictionary(self):
 		print "Building translation dictionary"
 		start = time.clock()
-		bestEnglishTranslation = argmax(self.translate, axis=0)
-		self.translationDictionary = {}
-		for spanishWord in self.spanishVocabulary:
-			sidx = self.spanishToIndex[spanishWord]
-			self.translationDictionary[spanishWord] = self.indexToEnglish[int(bestEnglishTranslation[sidx])]
+		self.translationDictionary = defaultdict(lambda: [])
+		for i in xrange(5):
+			bestEnglishTranslation = argmax(self.translate, axis=0)
+			for spanishWord in self.spanishVocabulary:
+				# Save the english word and translation probability
+				sidx = self.spanishToIndex[spanishWord]
+				eidx = bestEnglishTranslation[sidx]
+				self.translationDictionary[spanishWord].append( (self.indexToEnglish[int(eidx)],self.translate[eidx][sidx]) )
+				self.translate[eidx][sidx] = 0. # Now set this to 0 so we can find new argmax
 		print "Finished building translationDictionary", time.clock() - start
-		# 	maxProb = -inf
-		# 	currentTranslation = ''
-		# 	for eidx in range(len(self.translate)):
-		# 		# print eidx, sidx
-		# 		if self.translate[eidx, sidx] > maxProb:
-		# 			currentTranslation = self.indexToEnglish[eidx]
-		# 			maxProb = self.translate[eidx, sidx]
-		# 	self.translationDictionary[spanishWord] = currentTranslation
-		# print "Finished building translationDictionary", time.clock() - start
 
 	def saveTranslationToFile(self):
 		"""
@@ -220,10 +209,11 @@ def main():
 	#IBM_Model.train(5) 
 	print "Saved", time.clock() - start
 	#translationFileName = IBM_Model.saveTranslationToFile()
-	translationFileName = "translation_2015.02.24|22.13"
+	translationFileName = "translation_2015.02.25|01.18"
 	
 
 	translator = IBM_Model.readInTranslation(translationFileName)
+
 	spanishDevFile = loadList("./es-en/dev/newstest2012.es")
 	translationOutput = open("machine_translated", 'wb')
 	for sentence in spanishDevFile:
