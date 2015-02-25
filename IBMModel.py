@@ -4,6 +4,7 @@ from numpy import * #fast as lightning
 import cPickle as pickle #file reading for python data in clean way
 import sys #for argument input
 import nltk #nlp awesomesauce
+import datetime
 
 
 englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'./es-en/train/small.en' #
@@ -139,6 +140,8 @@ class IBM_Model_1:
 		for word in inputWords:
 			if word in self.translationDictionary:
 				finalSentence += (self.translationDictionary[word]+' ' if self.translationDictionary[word] != self.null else '')
+			else:
+				finalSentence += word+' '
 		return finalSentence[:-1]
 
 
@@ -167,13 +170,22 @@ class IBM_Model_1:
 			Pickle to save the translation dictionary to a file.
 			Pre-condition: Must be run after the translation system is trained
 		"""
-		translationFileName = 'translation_' + str(time.clock())
+		translationFileName = 'translation_'+time.strftime("%Y.%m.%d|%H.%M")
 		if not hasattr(self, 'translationDictionary'):
 			self.buildTranslationDictionary()
 		start = time.clock()
 		print "Saving to File"
 		pickle.dump(self.translationDictionary, open(translationFileName, 'wb'))
+		pickle.dump(self.translate, open("translationProbabilities", 'wb'))
+		lastDump = {
+			'englishToIndex': self.englishToIndex,
+			'spanishToIndex': self.spanishToIndex,
+			'indexToEnglish': self.indexToEnglish,
+			'indexToSpanish': self.indexToSpanish
+		}
+		pickle.dump(lastDump, open('mappingWordsTo2dArray', wb))
 		print "File Saved", translationFileName
+
 		return translationFileName
 
 	def readInTranslation(self, file_name):
@@ -207,7 +219,7 @@ def main():
 	# pool = multiprocessing.Pool(processes=cpus)
 	# pool.map(square, xrange(10000**2))
 	IBM_Model = IBM_Model_1()
-	IBM_Model.train(1) 
+	IBM_Model.train(100) 
 	print "Saved", time.clock() - start
 	translationFileName = IBM_Model.saveTranslationToFile()
 
