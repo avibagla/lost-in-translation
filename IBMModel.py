@@ -7,7 +7,6 @@ import nltk #nlp awesomesauce
 import datetime
 from StupidBackoffLanguageModel import StupidBackoffLanguageModel
 
-
 englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'./es-en/train/small.en' #
 spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.es' #
 
@@ -84,7 +83,6 @@ class IBM_Model_1:
 				for each e in E and f in F
 					Add the total contribution of the sentences E,F to the word pair: tranlate(e,f)
 		"""
-
 		# Why Zeros? Because, if two words are never aligned in sentences, we know that their 
 		# probability will hit zero eventually, so we speed up the process.
 		newTranslate = 	zeros((len(self.englishVocabulary),len(self.spanishVocabulary)), dtype = float64)
