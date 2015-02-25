@@ -1,4 +1,4 @@
-mport math, collections
+import math, collections
 
 def fDiv(a, b):
     return float(a)/float(b)
