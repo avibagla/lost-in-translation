@@ -5,8 +5,7 @@ import cPickle as pickle #file reading for python data in clean way
 import sys #for argument input
 import nltk #nlp awesomesauce
 import datetime
-import StupidBackoffLanguageModel
-import bottleneck as bn
+from StupidBackoffLanguageModel import StupidBackoffLanguageModel
 
 englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'./es-en/train/small.en' #
 spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.es' #
@@ -137,25 +136,22 @@ class IBM_Model_1:
 		inputWords = inputSentence.split()
 		finalSentence = ''
 		for word in inputWords:
-			if word.lower() in self.translationDictionary:
-				word = word.lower()
+			word = word.lower()
+			if word in self.translationDictionary:
 				finalSentence += (self.translationDictionary[word]+' ' if self.translationDictionary[word] != self.null else '')
 			else:
-				finalSentence += word.lower()+' '
+				finalSentence += word+' '
 		return finalSentence[:-1]
 
 
 	def buildTranslationDictionary(self):
 		print "Building translation dictionary"
 		start = time.clock()
-		self.translationDictionary = defaultdict(lambda: [])
-		for i in xrange(5):
-			bestEnglishTranslation = argmax(self.translate, axis=0)
-			for spanishWord in self.spanishVocabulary:
-				sidx = self.spanishToIndex[spanishWord]
-				tidx = bestEnglishTranslation[sidx]
-				self.translationDictionary[spanishWord].append((self.indexToEnglish[int(tidx)],self.translationDictionary[]]
-
+		bestEnglishTranslation = argmax(self.translate, axis=0)
+		self.translationDictionary = {}
+		for spanishWord in self.spanishVocabulary:
+			sidx = self.spanishToIndex[spanishWord]
+			self.translationDictionary[spanishWord] = self.indexToEnglish[int(bestEnglishTranslation[sidx])]
 		print "Finished building translationDictionary", time.clock() - start
 		# 	maxProb = -inf
 		# 	currentTranslation = ''
