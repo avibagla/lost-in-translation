@@ -176,7 +176,7 @@ class IBM_Model_1:
 		start = time.clock()
 		print "Saving to File"
 		pickle.dump(self.translationDictionary, open(translationFileName, 'wb'))
-		pickle.dump(self.translate, open("translationProbabilities", 'wb'))
+		# pickle.dump(self.translate, open("translationProbabilities", 'wb'))
 		lastDump = {
 			'englishToIndex': self.englishToIndex,
 			'spanishToIndex': self.spanishToIndex,
@@ -219,10 +219,10 @@ def main():
 	# pool = multiprocessing.Pool(processes=cpus)
 	# pool.map(square, xrange(10000**2))
 	IBM_Model = IBM_Model_1()
-	IBM_Model.train(100) 
+	# IBM_Model.train(10) 
 	print "Saved", time.clock() - start
-	translationFileName = IBM_Model.saveTranslationToFile()
-
+	# translationFileName = IBM_Model.saveTranslationToFile()
+	translationFileName = 'translation_2015.02.24|21.42'
 	translator = IBM_Model.readInTranslation(translationFileName)
 	spanishDevFile = loadList("./es-en/dev/newstest2012.es")
 	translationOutput = open("machine_translated", 'wb')
