@@ -6,7 +6,7 @@ import sys #for argument input
 import nltk #nlp awesomesauce
 import datetime
 import StupidBackoffLanguageModel
-
+import bottleneck as bn
 
 englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'./es-en/train/small.en' #
 spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.es' #
@@ -84,7 +84,6 @@ class IBM_Model_1:
 				for each e in E and f in F
 					Add the total contribution of the sentences E,F to the word pair: tranlate(e,f)
 		"""
-
 		# Why Zeros? Because, if two words are never aligned in sentences, we know that their 
 		# probability will hit zero eventually, so we speed up the process.
 		newTranslate = 	zeros((len(self.englishVocabulary),len(self.spanishVocabulary)), dtype = float64)
@@ -149,11 +148,14 @@ class IBM_Model_1:
 	def buildTranslationDictionary(self):
 		print "Building translation dictionary"
 		start = time.clock()
-		bestEnglishTranslation = argmax(self.translate, axis=0)
-		self.translationDictionary = {}
-		for spanishWord in self.spanishVocabulary:
-			sidx = self.spanishToIndex[spanishWord]
-			self.translationDictionary[spanishWord] = self.indexToEnglish[int(bestEnglishTranslation[sidx])]
+		self.translationDictionary = defaultdict(lambda: [])
+		for i in xrange(5):
+			bestEnglishTranslation = argmax(self.translate, axis=0)
+			for spanishWord in self.spanishVocabulary:
+				sidx = self.spanishToIndex[spanishWord]
+				tidx = bestEnglishTranslation[sidx]
+				self.translationDictionary[spanishWord].append((self.indexToEnglish[int(tidx)],self.translationDictionary[]]
+
 		print "Finished building translationDictionary", time.clock() - start
 		# 	maxProb = -inf
 		# 	currentTranslation = ''
