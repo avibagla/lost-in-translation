@@ -23,10 +23,9 @@ class IBM_Model_1:
 		self.spanishVocabulary = set()
 		self.null = "<<NULL>>"
 		for i, sentence in enumerate(self.englishCorpus):
-			self.englishVocabulary |= set(self.englishCorpus[i].split())
-			self.spanishVocabulary |= set(self.spanishCorpus[i].split())
+			self.englishVocabulary |= set(self.englishCorpus[i].lower().split())
+			self.spanishVocabulary |= set(self.spanishCorpus[i].lower().split())
 		self.englishVocabulary.add(self.null)
-
 
 	def train(self, iterations):
 		"""
@@ -92,8 +91,8 @@ class IBM_Model_1:
 
 		for englishSentence, foreignSentence in trainingPhrases:
 			# Tokenize sentences and add NULL to englishSentence
-			englishSentence = englishSentence.split() + [self.null]
-			foreignSentence = foreignSentence.split()
+			englishSentence = englishSentence.lower().split() + [self.null]
+			foreignSentence = foreignSentence.lower().split()
 
 			for e in englishSentence:
 				sTotalE = 0
@@ -138,10 +137,11 @@ class IBM_Model_1:
 		inputWords = inputSentence.split()
 		finalSentence = ''
 		for word in inputWords:
-			if word in self.translationDictionary:
+			if word.lower() in self.translationDictionary:
+				word = word.lower()
 				finalSentence += (self.translationDictionary[word]+' ' if self.translationDictionary[word] != self.null else '')
 			else:
-				finalSentence += word+' '
+				finalSentence += word.lower()+' '
 		return finalSentence[:-1]
 
 
@@ -183,7 +183,7 @@ class IBM_Model_1:
 			'indexToEnglish': self.indexToEnglish,
 			'indexToSpanish': self.indexToSpanish
 		}
-		pickle.dump(lastDump, open('mappingWordsTo2dArray', wb))
+		pickle.dump(lastDump, open('mappingWordsTo2dArray', 'wb'))
 		print "File Saved", translationFileName
 
 		return translationFileName
@@ -219,10 +219,12 @@ def main():
 	# pool = multiprocessing.Pool(processes=cpus)
 	# pool.map(square, xrange(10000**2))
 	IBM_Model = IBM_Model_1()
-	# IBM_Model.train(10) 
+	#IBM_Model.train(5) 
 	print "Saved", time.clock() - start
-	# translationFileName = IBM_Model.saveTranslationToFile()
-	translationFileName = 'translation_2015.02.24|21.42'
+	#translationFileName = IBM_Model.saveTranslationToFile()
+	translationFileName = "translation_2015.02.24|22.13"
+	
+
 	translator = IBM_Model.readInTranslation(translationFileName)
 	spanishDevFile = loadList("./es-en/dev/newstest2012.es")
 	translationOutput = open("machine_translated", 'wb')
