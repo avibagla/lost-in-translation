@@ -3,6 +3,12 @@ import math, collections
 def fDiv(a, b):
     return float(a)/float(b)
 
+def t(prob, txt):
+  try:
+    math.log(prob)
+  except:
+    print txt
+
 class CustomLanguageModel:
  
   def __init__(self):
@@ -65,8 +71,10 @@ class CustomLanguageModel:
         knLambda        = fDiv(discount*len(self.unigramsAfter[given]), self.unigramCounts[given])
         pContinuation   = fDiv(len(self.unigramsBefore[w]), len(self.bigramCounts))
         if bigramTerm > 0: 
+            t(bigramTerm, "74")
             return bigramTerm
         else:
+            t(bigramTerm + knLambda*pContinuation, "76")
             return bigramTerm + knLambda*pContinuation
     else: 
         return self.unigramProbability(w)
@@ -84,8 +92,8 @@ class CustomLanguageModel:
         if trigramTerm > 0: return trigramTerm
     if given in self.bigramCounts:
         knLambda        = fDiv(discount*len(self.unigramsAfter[given]), self.bigramCounts[given])
+        if knLambda == 0.0: knLambda = discount
     pContinuation       = self.bigramProbability((proshlii, w))
-
     return trigramTerm + knLambda*pContinuation
 
 
@@ -103,9 +111,11 @@ class CustomLanguageModel:
         if lastToken == self.startToken: 
             nextToLastToken, lastToken = lastToken, token
             continue
-        thisscore = math.log(self.trigramProbability((nextToLastToken, lastToken, token)))
+        try: 
+          thisscore = math.log(self.trigramProbability((nextToLastToken, lastToken, token)))
+        except:
+          print (nextToLastToken, lastToken, token), self.trigramProbability((nextToLastToken, lastToken, token))
         #print thisscore
         score += thisscore
-
         nextToLastToken, lastToken = lastToken, token
     return score

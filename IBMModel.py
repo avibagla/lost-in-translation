@@ -10,7 +10,8 @@ from Queue import PriorityQueue as pq
 
 englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'./es-en/train/small.en' #
 spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.es' #
-
+lmWeight = .02
+tmWeight = 1.-lmWeight
 
 class IBM_Model_1:
 	"""Class which trains IBM Model 1 and allows for testing"""
@@ -62,13 +63,8 @@ class IBM_Model_1:
 
 		#Zip corpuses and iterate through E step and M step
 		zippedCorpuses = zip(self.englishCorpus, self.spanishCorpus)
-		start = time.clock()
-		self.Estep(zippedCorpuses)
-		print "1 E Step completed", time.clock() - start
-		start = time.clock()
-		self.Mstep()
-		print "1 M Step completed", time.clock() - start
-		for i in xrange(2, iterations+1):
+		
+		for i in xrange(1, iterations+1):
 			start = time.clock()
 			self.Estep(zippedCorpuses)
 			print i, "E Step completed", time.clock() - start
@@ -153,7 +149,7 @@ class IBM_Model_1:
 				e = self.translationDictionary[f][nthBest[j]][0]
 			if e != self.null:
 				englishSentence.append(e)
-		return englishSentence
+		return " ".join(englishSentence)
 
 	def getTMSentenceTransLogProbFromEnglish(self, foreignSentence, englishSentence):
 		# Sentences must be same length (including <<NULL>>'s)
@@ -187,9 +183,13 @@ class IBM_Model_1:
 			Pre-condition: Translation dictionary must be built before this method is called
 		"""
 		inputWords = inputSentence.lower().split()
-		topk = self.generateKBestFromTM(1, inputWords)
+		topk = self.generateKBestFromTM(10, inputWords)
+		for i,(sentence, tmLogProb) in enumerate(topk):
+			topk[i] = (sentence, lmWeight*self.getLMSentenceLogProb(sentence) + tmWeight*tmLogProb)
+		topk = sorted(topk, key=lambda sentenceAndLogProb: -sentenceAndLogProb[1])
+
 		#print topk
-		return " ".join(topk[0][0])
+		return topk[0][0]
 		# finalSentence = ''
 		# for word in inputWords:
 		# 	if word.lower() in self.translationDictionary:
@@ -249,7 +249,7 @@ class IBM_Model_1:
 		self.translationDictionary = pickle.load(open(file_name, "rb"))
 
 
-	def getProbabilityOfSentence(self, inputSentence):
+	def getLMSentenceLogProb(self, inputSentence):
 		"""
 			Returns log probability of the sentence returned
 		"""
@@ -278,10 +278,10 @@ def main():
 	# pool = multiprocessing.Pool(processes=cpus)
 	# pool.map(square, xrange(10000**2))
 	IBM_Model = IBM_Model_1()
-	#IBM_Model.train(5) 
-	#print "Saved", time.clock() - start
+	#IBM_Model.train(6) 
+	print "Saved", time.clock() - start
 	#translationFileName = IBM_Model.saveTranslationToFile()
-	translationFileName = "translation_2015.02.25|03.04"
+	translationFileName = "translation_2015.02.25|04.58"
 	
 	translator = IBM_Model.readInTranslation(translationFileName)
 
