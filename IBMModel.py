@@ -7,11 +7,19 @@ import nltk #nlp awesomesauce
 import datetime
 from StupidBackoffLanguageModel import CustomLanguageModel as lm
 from Queue import PriorityQueue as pq
+import re
+from bleu_score import run as bleu
+import os
+# from nltk.corpus import reuters
 
 englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'./es-en/train/small.en' #
 spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.es' #
-lmWeight = .02
+lmWeight = .1
 tmWeight = 1.-lmWeight
+
+# Will have some quirks, but overall okay
+wordRegex = re.compile(r"^(?:[^\W\d_]|')+$", re.UNICODE)
+
 
 class IBM_Model_1:
 	"""Class which trains IBM Model 1 and allows for testing"""
@@ -26,9 +34,12 @@ class IBM_Model_1:
 		self.null = "<<NULL>>"
 		self.lm = lm()
 		for i, sentence in enumerate(self.englishCorpus):
-			self.englishVocabulary |= set(self.englishCorpus[i].lower().split())
-			self.spanishVocabulary |= set(self.spanishCorpus[i].lower().split())
+			self.englishVocabulary |= set(self.tokenizeNoPunc(self.englishCorpus[i]))
+			self.spanishVocabulary |= set(self.tokenizeNoPunc(self.spanishCorpus[i]))
 		self.englishVocabulary.add(self.null)
+
+	def trainLM(self):
+		self.lm.train() #self.englishCorpus
 
 	def train(self, iterations):
 		"""
@@ -46,7 +57,7 @@ class IBM_Model_1:
 		self.translate.fill(countInv)
 
 		#train the language model on English
-		self.lm.train(self.englishCorpus)
+		self.trainLM()
 
 		#Create Auxilliary Mapping dictionaries so our multidimensional array can be kept small
 		i = 0
@@ -75,8 +86,6 @@ class IBM_Model_1:
 		# 	for e in self.englishVocabulary:
 		# 		print e,f,self.translate[self.englishToIndex[e]][self.spanishToIndex[f]]
 
-
-
 	def Estep(self, trainingPhrases):
 		"""
 			Runs the Expectation Step of the IBM Model 1 algorithm
@@ -92,8 +101,8 @@ class IBM_Model_1:
 
 		for englishSentence, foreignSentence in trainingPhrases:
 			# Tokenize sentences and add NULL to englishSentence
-			englishSentence = englishSentence.lower().split() + [self.null]
-			foreignSentence = foreignSentence.lower().split()
+			englishSentence = self.tokenizeNoPunc(englishSentence) + [self.null]
+			foreignSentence = self.tokenizeNoPunc(foreignSentence)
 
 			for e in englishSentence:
 				sTotalE = 0
@@ -151,6 +160,15 @@ class IBM_Model_1:
 				englishSentence.append(e)
 		return " ".join(englishSentence)
 
+	def tokenize(self, sentence):
+		return sentence.lower().split()
+
+	def removeNonWords(self, sentence):
+		return filter(lambda token: wordRegex.match(token) is not None, sentence)
+
+	def tokenizeNoPunc(self, sentence):
+		return self.removeNonWords(self.tokenize(sentence))
+
 	def getTMSentenceTransLogProbFromEnglish(self, foreignSentence, englishSentence):
 		# Sentences must be same length (including <<NULL>>'s)
 		totalLogProb = 0
@@ -182,24 +200,14 @@ class IBM_Model_1:
 			Pre-condition: IBM Model training step is completed
 			Pre-condition: Translation dictionary must be built before this method is called
 		"""
-		inputWords = inputSentence.lower().split()
+		inputWords = self.tokenize(inputSentence)
 		topk = self.generateKBestFromTM(10, inputWords)
 		for i,(sentence, tmLogProb) in enumerate(topk):
-			topk[i] = (sentence, lmWeight*self.getLMSentenceLogProb(sentence) + tmWeight*tmLogProb)
+			lmLogProb = self.getLMSentenceLogProb(sentence)
+			topk[i] = (sentence, lmWeight*lmLogProb + tmWeight*tmLogProb, lmLogProb, tmLogProb)
 		topk = sorted(topk, key=lambda sentenceAndLogProb: -sentenceAndLogProb[1])
-
-		#print topk
+		print topk[:2]
 		return topk[0][0]
-		# finalSentence = ''
-		# for word in inputWords:
-		# 	if word.lower() in self.translationDictionary:
-		# 		word = word.lower()
-		# 		bestguess = self.translationDictionary[word][0][0]
-		# 		finalSentence += (bestguess+' ' if bestguess != self.null else '')
-		# 	else:
-		# 		finalSentence += word.lower()+' '
-		# return finalSentence[:-1]
-
 
 	def buildTranslationDictionary(self):
 		print "Building translation dictionary"
@@ -218,13 +226,13 @@ class IBM_Model_1:
 				self.translationDictionary[spanishWord].append(wordAndLogProb)
 		print "Finished building translationDictionary", time.clock() - start
 
-	def saveTranslationToFile(self):
+	def saveTranslationToFile(self, translationFileName='translation_'+time.strftime("%Y.%m.%d|%H.%M")):
 		"""
 			Since the EM algorithm only needs to be run once, this method uses python's builtin module
 			Pickle to save the translation dictionary to a file.
 			Pre-condition: Must be run after the translation system is trained
 		"""
-		translationFileName = 'translation_'+time.strftime("%Y.%m.%d|%H.%M")
+		#translationFileName = 'translation_'+time.strftime("%Y.%m.%d|%H.%M")
 		if not hasattr(self, 'translationDictionary'):
 			self.buildTranslationDictionary()
 		start = time.clock()
@@ -248,63 +256,83 @@ class IBM_Model_1:
 		"""
 		self.translationDictionary = pickle.load(open(file_name, "rb"))
 
-
 	def getLMSentenceLogProb(self, inputSentence):
 		"""
 			Returns log probability of the sentence returned
 		"""
-		return self.lm.score(inputSentence.split())
-
+		return self.lm.score(inputSentence)
 
 
 def loadList(file_name):
     """Loads text files as lists of lines."""
     """Taken from pa5"""
     with open(file_name) as f:
-        l = [line.strip() for line in f]
+        l = [line.strip().decode('utf8') for line in f]
     f.close()
     return l
 
+def getArguments(arguments):
+	if len(arguments) % 2 == 0:
+		print "error: each flag specified must have a value"
+		return {}
+	args = {}
+	arguments.pop(0)
+	while len(arguments)>0:
+		flag = arguments.pop(0)
+		val = arguments.pop(0)
+		args[flag] = val
+	return args
 
 
 def main():
 	
-
-
-
-	start = time.clock()
-
-
-	# pool = multiprocessing.Pool(processes=cpus)
-	# pool.map(square, xrange(10000**2))
-	IBM_Model = IBM_Model_1()
-	#IBM_Model.train(6) 
-	print "Saved", time.clock() - start
-	#translationFileName = IBM_Model.saveTranslationToFile()
-	translationFileName = "translation_2015.02.25|04.58"
-	
-	translator = IBM_Model.readInTranslation(translationFileName)
-
-	spanishDevFile = loadList("./es-en/dev/newstest2012.es")
-	translationOutput = open("machine_translated", 'wb')
-	for sentence in spanishDevFile:
-		translationOutput.write("%s\n"%IBM_Model.predict(sentence))
-	translationOutput.close()
-	
-	
-
-
-	# start = time.clock()
-	# pool = [square(x) for x in xrange(10000**2)]
-	# print time.clock() - start
-
+	options = getArguments(sys.argv)
+	print "Evaluation flags:",  options
+	IBM_Model = None
+	if "-train" in options or "-dict" in options:
+		IBM_Model = IBM_Model_1()
 
 	
-	# pool = multiprocessing.Pool(processes=cpus)
-	# print pool.map(square, xrange(1000))
-	# # IBM_Model = IBM_Model_1()
-	# # IBM_Model.train() 
-	# print time.clock() - start
-
+	if "-train" in options:
+		start = time.clock()
+		IBM_Model.train( int(options["-train"]) )
+		print "Trained", time.clock() - start
+		start = time.clock()
+		if "-dict" not in options:
+			options["-dict"] = 'translation_'+time.strftime("%Y.%m.%d|%H.%M")
+		translationFileName = IBM_Model.saveTranslationToFile(options["-dict"])
+		print "Saved translation", time.clock() - start
+	if "-dict" in options:
+		start = time.clock()
+		IBM_Model.trainLM()
+		translationFileName = options["-dict"]
+		translator = IBM_Model.readInTranslation(translationFileName)
+		spanishDevFile = loadList("./es-en/dev/newstest2012.es")
+		translationOutput = open("machine_translated", 'w')
+		for sentence in spanishDevFile:
+			translationOutput.write("%s\n"%IBM_Model.predict(sentence).encode('utf8'))
+		translationOutput.close()
+		print "Translated", time.clock() - start
+	if "-eval" in options:
+		bleu("./es-en/dev/newstest2012.en", "machine_translated")
 
 main()
+
+
+# translation_nltk_tokenize
+# BLEU-1 score: 47.795641
+# BLEU-2 score: 9.851895
+
+# translation_lm02_tm98
+# BLEU-1 score: 49.064567
+# BLEU-2 score: 10.339403
+
+# translation_no_punc vanilla
+# BLEU-1 score: 50.912483
+# BLEU-2 score: 11.267491
+
+# translation_no_punc tm.9 lm.1
+# BLEU-1 score: 50.912483
+# BLEU-2 score: 11.267844
+
+
