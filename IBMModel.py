@@ -2,6 +2,7 @@ import time #for debugging
 from collections import defaultdict #<3 dem defaults
 from numpy import * #fast as lightning
 import cPickle as pickle #file reading for python data in clean way
+import sys #for argument input
 
 englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'../es-en/train/small.en'
 spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'../es-en/train/small.es'
@@ -25,7 +26,10 @@ class IBM_Model_1:
 
 
 	def train(self, iterations):
-		"""Trains our IBM Model 1 by iterating through the E step and the M step."""
+		"""
+			Trains our IBM Model 1 by iterating through the E step and the M step.
+			EM will run at minimum one time, and at most 'iterations' times.
+		"""
 		start = time.clock()
 		self.englishToIndex = {}
 		self.spanishToIndex = {}
@@ -34,6 +38,8 @@ class IBM_Model_1:
 		countInv = 1./(len(self.spanishVocabulary))
 		self.translate = empty( [len(self.englishVocabulary),len(self.spanishVocabulary)], dtype = float64 )
 		self.translate.fill(countInv)
+
+		#Create Auxilliary Mapping dictionaries so our multidimensional array can be kept small
 		i = 0
 		for word in self.englishVocabulary:
 			self.englishToIndex[word] = i
@@ -46,6 +52,7 @@ class IBM_Model_1:
 			i+=1
 		print "table is built", time.clock() - start
 
+		#Zip corpuses and iterate through E step and M step
 		zippedCorpuses = zip(self.englishCorpus, self.spanishCorpus)
 		start = time.clock()
 		self.Estep(zippedCorpuses)
@@ -74,13 +81,15 @@ class IBM_Model_1:
 				for each e in E and f in F
 					Add the total contribution of the sentences E,F to the word pair: tranlate(e,f)
 		"""
+
+		# Why Zeros? Because, if two words are never aligned in sentences, we know that their 
+		# probability will hit zero eventually, so we speed up the process.
 		newTranslate = 	zeros((len(self.englishVocabulary),len(self.spanishVocabulary)), dtype = float64)
 		self.totalF = 	zeros(len(self.spanishVocabulary), dtype = float64)
 
 		for englishSentence, foreignSentence in trainingPhrases:
 			# Tokenize sentences and add NULL to englishSentence
 			englishSentence = englishSentence.split() + [self.null]
-			#englishSentence.append(self.null)
 			foreignSentence = foreignSentence.split()
 
 			for e in englishSentence:
@@ -117,8 +126,12 @@ class IBM_Model_1:
 		return normalizationFactor
 
 	def predict(self, inputSentence):
-		"""Takes in a foreign sentence and uses predictions to determine the highest liklihood sentence with our MT"""
-		"""Translation dictionary must be built before this method is called"""
+		"""
+			Takes in a foreign sentence and uses predictions to determine the 
+			highest maximum liklihood sentence. Goes word by word and does a direct translation.
+			Pre-condition: IBM Model training step is completed
+			Pre-condition: Translation dictionary must be built before this method is called
+		"""
 		inputWords = inputSentence.split()
 		finalSentence = ''
 		for word in inputWords:
@@ -144,7 +157,11 @@ class IBM_Model_1:
 		print "Finished building translationDictionary", time.clock() - start
 
 	def saveTranslationToFile(self):
-		"""Must be run after the translation system is trained"""
+		"""
+			Since the EM algorithm only needs to be run once, this method uses python's builtin module
+			Pickle to save the translation dictionary to a file.
+			Pre-condition: Must be run after the translation system is trained
+		"""
 		if translationDictionary not in self:
 			self.buildTranslationDictionary()
 		start = time.clock()
@@ -153,6 +170,9 @@ class IBM_Model_1:
 		print "File Saved", time.clock() - start
 
 	def readInTranslation(self, file_name):
+		"""
+			Reads in a pickle dump to the translation dictionary
+		"""
 		self.translationDictionary = pickle.load(open(file_name, "rb"))
 
 
@@ -170,22 +190,26 @@ def loadList(file_name):
 
 
 def main():
+	
+
+
+
 	start = time.clock()
 
 
 	# pool = multiprocessing.Pool(processes=cpus)
 	# pool.map(square, xrange(10000**2))
 	IBM_Model = IBM_Model_1()
-	# IBM_Model.train(100) 
-	IBM_Model.readInTranslation("translation_4141.32095")
-
-	spanishDevFile = loadList("./es-en/dev/newstest2012.es")
-	translationOutput = open("machine_translated", 'wb')
-	for sentence in spanishDevFile:
-		translationOutput.write("%s\n"%IBM_Model.predict(sentence))
-	translationOutput.close()
+	IBM_Model.train(100) 
 	print "Saved", time.clock() - start
-	# IBM_Model.saveTranslationToFile()
+	IBM_Model.saveTranslationToFile()
+
+	# spanishDevFile = loadList("./es-en/dev/newstest2012.es")
+	# translationOutput = open("machine_translated", 'wb')
+	# for sentence in spanishDevFile:
+	# 	translationOutput.write("%s\n"%IBM_Model.predict(sentence))
+	# translationOutput.close()
+	
 	
 
 
