@@ -114,8 +114,10 @@ class IBM_Model_1:
 
 	def generateKBestFromTM(self, k, foreignSentence):
 		generatedSentences = []
+		nthBestTranslationForWord = []*len(foreignSentence)
 		for i in xrange(k):
 			for word in foreignSentence:
+				pass
 		return generatedSentences
 
 	def predict(self, inputSentence):
@@ -140,15 +142,18 @@ class IBM_Model_1:
 	def buildTranslationDictionary(self):
 		print "Building translation dictionary"
 		start = time.clock()
-		self.translationDictionary = defaultdict(lambda: [])
+		self.translationDictionary = {}
 		for i in xrange(5):
 			bestEnglishTranslation = argmax(self.translate, axis=0)
 			for spanishWord in self.spanishVocabulary:
 				# Save the english word and translation probability
 				sidx = self.spanishToIndex[spanishWord]
 				eidx = bestEnglishTranslation[sidx]
-				self.translationDictionary[spanishWord].append( (self.indexToEnglish[int(eidx)],self.translate[eidx][sidx]) )
+				wordAndLogProb  = (self.indexToEnglish[int(eidx)], math.log(self.translate[eidx][sidx]) if self.translate[eidx][sidx] > 0 else -inf)
 				self.translate[eidx][sidx] = 0. # Now set this to 0 so we can find new argmax
+				if spanishWord not in self.translationDictionary:
+					self.translationDictionary[spanishWord] = []
+				self.translationDictionary[spanishWord].append(wordAndLogProb)
 		print "Finished building translationDictionary", time.clock() - start
 
 	def saveTranslationToFile(self):
@@ -206,13 +211,13 @@ def main():
 	# pool = multiprocessing.Pool(processes=cpus)
 	# pool.map(square, xrange(10000**2))
 	IBM_Model = IBM_Model_1()
-	#IBM_Model.train(5) 
+	IBM_Model.train(1) 
 	print "Saved", time.clock() - start
-	#translationFileName = IBM_Model.saveTranslationToFile()
-	translationFileName = "translation_2015.02.25|01.18"
+	translationFileName = IBM_Model.saveTranslationToFile()
+	#translationFileName = "translation_2015.02.25|01.18"
 	
-
 	translator = IBM_Model.readInTranslation(translationFileName)
+	print IBM_Model.translationDictionary["el"]
 
 	spanishDevFile = loadList("./es-en/dev/newstest2012.es")
 	translationOutput = open("machine_translated", 'wb')
