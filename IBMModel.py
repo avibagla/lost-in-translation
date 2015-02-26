@@ -291,6 +291,9 @@ def getArguments(arguments):
 	return args
 
 
+def postProcess(translationOutput):
+	pass
+
 def main():
 	
 	options = getArguments(sys.argv)
