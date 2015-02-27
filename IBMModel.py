@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 import time #for debugging
 from collections import defaultdict, namedtuple #<3 dem defaults
 from numpy import * #fast as lightning
@@ -11,10 +13,14 @@ import re
 from bleu_score import run as bleu
 import os
 # from nltk.corpus import reuters
+from nltk.tag.stanford import POSTagger
+etagger = POSTagger('../stanford-postagger/models/english-left3words-distsim.tagger', '../stanford-postagger/stanford-postagger.jar', encoding='utf8') 
+stagger = POSTagger('../stanford-postagger/models/spanish-distsim.tagger', '../stanford-postagger/stanford-postagger.jar', encoding='utf8') 
+
 
 englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'./es-en/train/small.en' #
 spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.es' #
-lmWeight = .1
+lmWeight = .5
 tmWeight = 1.-lmWeight
 
 # Will have some quirks, but overall okay
@@ -39,7 +45,8 @@ class IBM_Model_1:
 		self.englishVocabulary.add(self.null)
 
 	def trainLM(self):
-		self.lm.train() #self.englishCorpus
+		#self.lm.train() #self.englishCorpus
+		pass
 
 	def train(self, iterations):
 		"""
@@ -127,22 +134,23 @@ class IBM_Model_1:
 		generatedSentences = []
 		sentenceQueue = pq()
 		logprob = self.getTMSentenceTransLogProbFromNth(foreignSentence, [0]*len(foreignSentence))
-		sentenceQueue.put((logprob, [0]*len(foreignSentence)))
-		for i in xrange(k):
-			if sentenceQueue.empty(): break
+		sentenceQueue.put((-logprob, [0]*len(foreignSentence)))
+		while (not sentenceQueue.empty()) and (len(generatedSentences) <= k):
 			ithLogProb, ithWordIndices = sentenceQueue.get()
-			generatedSentences.append( (ithWordIndices, ithLogProb) )
-			
+			if (ithWordIndices, -ithLogProb) not in generatedSentences:
+				generatedSentences.append( (ithWordIndices, -ithLogProb) )
+
+
 			for j in xrange(len(foreignSentence)): # And produce a new candidate for each sentence
 				f = foreignSentence[j]
 				if 	(f not in self.translationDictionary) or \
 						(ithWordIndices[j] == len(self.translationDictionary[f]) - 1): 
 						continue # No use checking these cases
-
 				newCandidateIndices = list(ithWordIndices)
 				newCandidateIndices[j] += 1
+
 				logprob = self.getTMSentenceTransLogProbFromNth(foreignSentence, newCandidateIndices)
-				sentenceQueue.put((logprob, newCandidateIndices))
+				sentenceQueue.put((-logprob, newCandidateIndices))
 
 		for i in xrange(len(generatedSentences)):
 			nthBest, logProb = generatedSentences[i]
@@ -206,7 +214,6 @@ class IBM_Model_1:
 			lmLogProb = self.getLMSentenceLogProb(sentence)
 			topk[i] = (sentence, lmWeight*lmLogProb + tmWeight*tmLogProb, lmLogProb, tmLogProb)
 		topk = sorted(topk, key=lambda sentenceAndLogProb: -sentenceAndLogProb[1])
-		print topk[:2]
 		return topk[0][0]
 
 	def buildTranslationDictionary(self):
@@ -284,6 +291,9 @@ def getArguments(arguments):
 	return args
 
 
+def postProcess(translationOutput):
+	pass
+
 def main():
 	
 	options = getArguments(sys.argv)
@@ -291,6 +301,26 @@ def main():
 	IBM_Model = None
 	if "-train" in options or "-dict" in options:
 		IBM_Model = IBM_Model_1()
+
+	
+	#stagger = POSTagger('../stanford-postagger/models/spanish-distsim.tagger', '../stanford-postagger/stanford-postagger.jar') 
+	# spanishCorpusFile = "./es-en/dev/newstest2012.es"
+	# spanishSents = loadList(spanishCorpusFile)
+	# spanishEuroParlTagged = []
+	# print len(spanishSents)
+	# for i, sentence in enumerate(spanishSents):
+	# 	if i % 100 == 0: print i
+	# 	spanishEuroParlTagged.append(stagger.tag(sentence.split()))
+	# pickle.dump(spanishEuroParlTagged, open('./es-en/dev/newstest2012-tagged.es', 'wb'))
+	
+	#etagger = POSTagger('../stanford-postagger/models/english-left3words-distsim.tagger', '../stanford-postagger/stanford-postagger.jar') 
+	# englishSents = loadList(englishCorpusFile)
+	# print len(englishSents)
+	# englishEuroParlTagged = []
+	# for i, sentence in enumerate(englishSents):
+	# 	if i % 100 == 0: print i
+	# 	englishEuroParlTagged.append(etagger.tag(sentence.split()))
+	# pickle.dump(englishEuroParlTagged, open('./es-en/train/europarl-tagged.es-en.en', 'wb'))
 
 	
 	if "-train" in options:
@@ -307,6 +337,9 @@ def main():
 		IBM_Model.trainLM()
 		translationFileName = options["-dict"]
 		translator = IBM_Model.readInTranslation(translationFileName)
+		# for word in IBM_Model.spanishVocabulary:
+		# 	print word, IBM_Model.translationDictionary[word]
+		# print IBM_Model.generateKBestFromTM(10, ["la", "bruja", "verde"])
 		spanishDevFile = loadList("./es-en/dev/newstest2012.es")
 		translationOutput = open("machine_translated", 'w')
 		for sentence in spanishDevFile:
@@ -316,7 +349,7 @@ def main():
 	if "-eval" in options:
 		bleu("./es-en/dev/newstest2012.en", "machine_translated")
 
-main()
+#main()
 
 
 # translation_nltk_tokenize
@@ -332,7 +365,17 @@ main()
 # BLEU-2 score: 11.267491
 
 # translation_no_punc tm.9 lm.1
-# BLEU-1 score: 50.912483
-# BLEU-2 score: 11.267844
+# BLEU-1 score: 50.701649
+# BLEU-2 score: 11.129942
 
+# translation_no_punc tm.95 lm.05
+# BLEU-1 score: 50.676917
+# BLEU-2 score: 11.164579
 
+# translation_no_punc tm.6 lm.4
+# BLEU-1 score: 50.219566
+# BLEU-2 score: 10.877386
+
+# translation_no_punc equal weights
+# BLEU-1 score: 50.064520
+# BLEU-2 score: 10.831915
