@@ -8,6 +8,7 @@ import nltk #nlp awesomesauce
 import datetime
 from StupidBackoffLanguageModel import CustomLanguageModel as lm
 from Queue import PriorityQueue as pq
+from heapq import *
 import re
 import os
 # from nltk.corpus import reuters
@@ -238,10 +239,11 @@ class IBM_Model_1:
 		"""
 		inputWords = self.tokenize(inputSentence)
 		topk = self.generateKBestFromTM(10, inputWords)
-		for i,(sentence, tmLogProb) in enumerate(topk):
-			lmLogProb = self.getLMSentenceLogProb(sentence)
-			topk[i] = (sentence, lmWeight*lmLogProb + tmWeight*tmLogProb, lmLogProb, tmLogProb)
-		topk = sorted(topk, key=lambda sentenceAndLogProb: -sentenceAndLogProb[1])
+		# for i,(sentence, tmLogProb) in enumerate(topk):
+		# 	lmLogProb = self.getLMSentenceLogProb(sentence)
+		# 	topk[i] = (sentence, lmWeight*lmLogProb + tmWeight*tmLogProb, lmLogProb, tmLogProb)
+		# topk = sorted(topk, key=lambda sentenceAndLogProb: -sentenceAndLogProb[1])
+		
 		return topk[0][0]
 
 	def buildTranslationDictionary(self):
@@ -297,6 +299,72 @@ class IBM_Model_1:
 			Returns log probability of the sentence returned
 		"""
 		return self.lm.score(inputSentence)
+
+	def dummy_beamSearchStackDecoder(self, englishTranslation):
+		pass
+
+	def beamSearchStackDecoder(self, englishTranslation):
+		stackSize = 100
+		spanishPositions = set([i for i in xrange(len(englishTranslation))])
+		hypothesisStack = [[] for i in xrange(len(englishTranslation) + 1)]
+		hypothesisStack[0].append((0, [])) 
+		for i in xrange(len(englishTranslation)):
+			for prob, hyp in hypothesisStack[i]:
+				try:
+					remaining = spanishPositions - set(hyp)
+				except: 
+					remaining = spanishPositions
+				for pos in remaining:
+					newHyp = hyp + [pos]
+					hypothesisCost 	= self.calculateSentenceLogProbability(newHyp, englishTranslation)
+					futureCost = 0
+					if len(hypothesisStack[i+1]) > stackSize: 
+						heapreplace( hypothesisStack[i+1], (hypothesisCost + futureCost, newHyp) ) 
+					else: 
+						heappush( hypothesisStack[i+1], (hypothesisCost + futureCost, newHyp) )
+		
+		## FIXME: Will not return any punctuation
+		return self.wordTuplesPositionsToSentence(englishTranslation,max(hypothesisStack[-1]))
+
+	def calculateSentenceLogProbability(positions, englishTranslation):
+		# positions: 						list of foreign word positions
+		# englishTranslation:		list of (englishWord, logProbOfTranslation)
+		sentence = ""
+		logProb = 0.0
+		logDistortionPenalty =0.1
+
+		# Translation model probability
+		for position in positions:
+			if englishTranslation[position][0] != NULL:
+				sentence = sentence + " " + englishTranslation[position][0]
+			logProb += englishTranslation[position][1]
+
+		# Language model probability
+		logProb += self.getLMSentenceLogProb(sentence)
+
+		# Distortion model probability
+		paddedPositions = [-1] + positions
+		for i in xrange(1, len(paddedPositions)):
+			logProb -= abs(paddedPositions[i] - paddedPositions[i-1]-1)*logDistortionPenalty
+		
+		return logProb
+
+	def calculateFutureCost(self):
+		pass
+
+	def wordTuplesPositionsToSentence(self, tuples, positions):
+		for position in positions:
+		if tuples[position][0] != NULL:
+			sentence = sentence + " " + tuples[position][0]
+
+
+
+
+
+
+
+
+
 
 
 def loadList(file_name):
