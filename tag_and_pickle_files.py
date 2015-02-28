@@ -2,6 +2,7 @@ import os
 import cPickle as pickle
 from nltk.tag.stanford import POSTagger
 
+# script to tag corpus files in batches and save them to a pickled file
 def main():
 	etagger = POSTagger('../stanford-postagger/models/english-left3words-distsim.tagger', '../stanford-postagger/stanford-postagger.jar', encoding='utf8') 
 	stagger = POSTagger('../stanford-postagger/models/spanish-distsim.tagger', '../stanford-postagger/stanford-postagger.jar', encoding='utf8') 
@@ -16,7 +17,7 @@ def loadList(file_name):
         l = [line.strip().decode('utf8') for line in f]
     f.close()
     return l
-    
+
 def tagLinesAndPickle(sents, tagger, filename):
 	tagged = []
 	for sentence in sents:

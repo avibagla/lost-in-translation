@@ -16,8 +16,9 @@ from nltk.tag.stanford import POSTagger
 etagger = POSTagger('../stanford-postagger/models/english-left3words-distsim.tagger', '../stanford-postagger/stanford-postagger.jar', encoding='utf8') 
 stagger = POSTagger('../stanford-postagger/models/spanish-distsim.tagger', '../stanford-postagger/stanford-postagger.jar', encoding='utf8') 
 
-englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'./es-en/train/small.en' #
-spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.es' #
+englishCorpusFile = #'./es-en/train/europarl-v7.es-en.en' #'./es-en/train/small.en' #
+spanishCorpusFile = #'./es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.es' #
+
 lmWeight = .0
 tmWeight = 1.-lmWeight
 
@@ -31,8 +32,10 @@ class IBM_Model_1:
 
 	def __init__(self):
 		"""Sets initial variables for our algorithm"""
-		self.englishCorpus = loadList(englishCorpusFile)
-		self.spanishCorpus = loadList(spanishCorpusFile)
+		with open(englishCorpusFile, "rb") as f:
+			self.englishCorpus = pickle.load(f) #loadList(englishCorpusFile)
+		with open(spanishCorpusFile, "rb") as f:
+			self.spanishCorpus = pickle.load(f) #loadList(spanishCorpusFile)
 		self.englishVocabulary = set()
 		self.spanishVocabulary = set()
 		self.null = "<<NULL>>"
@@ -99,8 +102,6 @@ class IBM_Model_1:
 				for each e in E and f in F
 					Add the total contribution of the sentences E,F to the word pair: tranlate(e,f)
 		"""
-		# Why Zeros? Because, if two words are never aligned in sentences, we know that their 
-		# probability will hit zero eventually, so we speed up the process.
 		newTranslate = 	zeros((len(self.englishVocabulary),len(self.spanishVocabulary)), dtype = float64)
 		self.totalF = 	zeros(len(self.spanishVocabulary), dtype = float64)
 
@@ -129,6 +130,8 @@ class IBM_Model_1:
 		self.translate = self.translate / self.totalF[newaxis,:] #makes use of broadcasting ^_^
 
 	def generateKBestFromTM(self, k, foreignSentence):
+		# Best-first search of translations in the translation model
+		# Returns the top K translations as judged by the translation model
 		generatedSentences = []
 		sentenceQueue = pq()
 		logprob = self.getTMSentenceTransLogProbFromNth(foreignSentence, [0]*len(foreignSentence))

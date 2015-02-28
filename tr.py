@@ -2,6 +2,27 @@ from IBMModel import IBM_Model_1
 from bleu_score import run as bleu
 import sys #for argument input
 
+"""
+	tr is a convenient interface into the IBM model and auxilliary tools
+	Flags: 
+		-train 	number-of-iterations
+			creates an instance of IBM_Model_1 and trains it on a corpus, then 
+			outputs the translation dictionary.
+		-dict 	location-of-translation-dictionary
+			uses an existing translation dictionary to translate a file from 
+			spanish to english and saves it in 'machine_translated'
+		-eval 	anything
+			runs the bleu_score script to evaluate the BLEU score of the 
+			'machine_translated' file
+"""
+
+usage = """
+tr: usage
+	python tr.py -train number-of-iterations
+	python tr.py -dict "location-of-translation-dictionary"
+	python tr.py -eval anything
+"""
+
 def tic():
 	return time.clock()
 def toc(start = 0):
@@ -57,7 +78,8 @@ def loadList(file_name):
 
 def getArguments(arguments):
 	if len(arguments) % 2 == 0:
-		print "error: each flag specified must have a value"
+		print "tr: each flag specified must have a value"
+		print usage
 		return {}
 	args = {}
 	arguments.pop(0)
