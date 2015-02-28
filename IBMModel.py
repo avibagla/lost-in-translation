@@ -4,23 +4,21 @@ import time #for debugging
 from collections import defaultdict, namedtuple #<3 dem defaults
 from numpy import * #fast as lightning
 import cPickle as pickle #file reading for python data in clean way
-import sys #for argument input
 import nltk #nlp awesomesauce
 import datetime
 from StupidBackoffLanguageModel import CustomLanguageModel as lm
 from Queue import PriorityQueue as pq
 import re
-from bleu_score import run as bleu
 import os
 # from nltk.corpus import reuters
 from nltk.tag.stanford import POSTagger
+
 etagger = POSTagger('../stanford-postagger/models/english-left3words-distsim.tagger', '../stanford-postagger/stanford-postagger.jar', encoding='utf8') 
 stagger = POSTagger('../stanford-postagger/models/spanish-distsim.tagger', '../stanford-postagger/stanford-postagger.jar', encoding='utf8') 
 
-
 englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'./es-en/train/small.en' #
 spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.es' #
-lmWeight = .5
+lmWeight = .0
 tmWeight = 1.-lmWeight
 
 # Will have some quirks, but overall okay
@@ -244,7 +242,8 @@ class IBM_Model_1:
 			self.buildTranslationDictionary()
 		start = time.clock()
 		print "Saving to File"
-		pickle.dump(self.translationDictionary, open(translationFileName, 'wb'))
+		with open(translationFileName, 'wb') as f:
+			pickle.dump(self.translationDictionary, f)
 		# pickle.dump(self.translate, open("translationProbabilities", 'wb'))
 		# lastDump = {
 		# 	'englishToIndex': self.englishToIndex,
@@ -278,77 +277,9 @@ def loadList(file_name):
     f.close()
     return l
 
-def getArguments(arguments):
-	if len(arguments) % 2 == 0:
-		print "error: each flag specified must have a value"
-		return {}
-	args = {}
-	arguments.pop(0)
-	while len(arguments)>0:
-		flag = arguments.pop(0)
-		val = arguments.pop(0)
-		args[flag] = val
-	return args
-
 
 def postProcess(translationOutput):
 	pass
-
-def main():
-	
-	options = getArguments(sys.argv)
-	print "Evaluation flags:",  options
-	IBM_Model = None
-	if "-train" in options or "-dict" in options:
-		IBM_Model = IBM_Model_1()
-
-	
-	#stagger = POSTagger('../stanford-postagger/models/spanish-distsim.tagger', '../stanford-postagger/stanford-postagger.jar') 
-	# spanishCorpusFile = "./es-en/dev/newstest2012.es"
-	# spanishSents = loadList(spanishCorpusFile)
-	# spanishEuroParlTagged = []
-	# print len(spanishSents)
-	# for i, sentence in enumerate(spanishSents):
-	# 	if i % 100 == 0: print i
-	# 	spanishEuroParlTagged.append(stagger.tag(sentence.split()))
-	# pickle.dump(spanishEuroParlTagged, open('./es-en/dev/newstest2012-tagged.es', 'wb'))
-	
-	#etagger = POSTagger('../stanford-postagger/models/english-left3words-distsim.tagger', '../stanford-postagger/stanford-postagger.jar') 
-	# englishSents = loadList(englishCorpusFile)
-	# print len(englishSents)
-	# englishEuroParlTagged = []
-	# for i, sentence in enumerate(englishSents):
-	# 	if i % 100 == 0: print i
-	# 	englishEuroParlTagged.append(etagger.tag(sentence.split()))
-	# pickle.dump(englishEuroParlTagged, open('./es-en/train/europarl-tagged.es-en.en', 'wb'))
-	
-	if "-train" in options:
-		start = time.clock()
-		IBM_Model.train( int(options["-train"]) )
-		print "Trained", time.clock() - start
-		start = time.clock()
-		if "-dict" not in options:
-			options["-dict"] = 'translation_'+time.strftime("%Y.%m.%d|%H.%M")
-		translationFileName = IBM_Model.saveTranslationToFile(options["-dict"])
-		print "Saved translation", time.clock() - start
-	if "-dict" in options:
-		start = time.clock()
-		IBM_Model.trainLM()
-		translationFileName = options["-dict"]
-		translator = IBM_Model.readInTranslation(translationFileName)
-		# for word in IBM_Model.spanishVocabulary:
-		# 	print word, IBM_Model.translationDictionary[word]
-		# print IBM_Model.generateKBestFromTM(10, ["la", "bruja", "verde"])
-		spanishDevFile = loadList("./es-en/dev/newstest2012.es")
-		translationOutput = open("machine_translated", 'w')
-		for sentence in spanishDevFile:
-			translationOutput.write("%s\n"%IBM_Model.predict(sentence).encode('utf8'))
-		translationOutput.close()
-		print "Translated", time.clock() - start
-	if "-eval" in options:
-		bleu("./es-en/dev/newstest2012.en", "machine_translated")
-
-main()
 
 
 # translation_nltk_tokenize
