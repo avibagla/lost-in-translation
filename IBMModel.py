@@ -19,6 +19,10 @@ stagger = POSTagger('../stanford-postagger/models/spanish-distsim.tagger', '../s
 englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'./es-en/train/small.en' #
 spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.es' #
 
+# Parts of Speech (POS) tagged
+PosTaggedEnglishCorpusFile = './es-en/train/europarl-tagged.en.pickle'
+PosTaggedSpanishCorpusFile = './es-en/train/europarl-tagged.es.pickle'
+
 lmWeight = .0
 tmWeight = 1.-lmWeight
 
@@ -58,18 +62,20 @@ wordRegex = re.compile(r"^(?:[^\W\d_]|')+$", re.UNICODE)
 class IBM_Model_1:
 	"""Class which trains IBM Model 1 and allows for testing"""
 
-
 	def __init__(self):
 		"""Sets initial variables for our algorithm"""
-		self.englishCorpus = loadList(englishCorpusFile)
-		self.spanishCorpus = loadList(spanishCorpusFile)
+		self.PosTaggedEnglishCorpus = pickle.load(open(PosTaggedEnglishCorpusFile, "rb"))
+		self.PosTaggedSpanishCorpus = pickle.load(open(PosTaggedSpanishCorpusFile, "rb"))
+
 		self.englishVocabulary = set()
 		self.spanishVocabulary = set()
 		self.null = "<<NULL>>"
 		self.lm = lm()
-		for i, sentence in enumerate(self.englishCorpus):
-			self.englishVocabulary |= set(self.tokenizeNoPunc(self.englishCorpus[i]))
-			self.spanishVocabulary |= set(self.tokenizeNoPunc(self.spanishCorpus[i]))
+		for i in range(len(self.PosTaggedEnglishCorpus)):
+			print self.PosTaggedSpanishCorpus[i]
+			self.PosTaggedEnglishCorpus[i]
+			# self.englishVocabulary |= set(self.parseTagsInSentence(self.PosTaggedEnglishCorpus[i]))
+			self.spanishVocabulary |= set(self.parseTagsInSentence(self.PosTaggedSpanishCorpus[i]))
 		self.englishVocabulary.add(self.null)
 
 	def trainLM(self):
@@ -198,6 +204,13 @@ class IBM_Model_1:
 
 	def tokenize(self, sentence):
 		return sentence.lower().split()
+
+	def parseTagsInSentence(self, taggedSentence):
+		parsedTaggedSentence = []
+		for tag in taggedSentence:
+			filter(lambda token: wordRegex.match(token) is not None
+			if not : 
+				parsedTaggedSentence.append((tag[0].lower(),tag[1].lower()))
 
 	def removeNonWords(self, sentence):
 		return filter(lambda token: wordRegex.match(token) is not None, sentence)
