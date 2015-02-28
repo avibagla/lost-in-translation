@@ -1,5 +1,6 @@
 from IBMModel import IBM_Model_1
 from bleu_score import run as bleu
+import time
 import sys #for argument input
 
 def tic():
