@@ -16,8 +16,8 @@ from nltk.tag.stanford import POSTagger
 etagger = POSTagger('../stanford-postagger/models/english-left3words-distsim.tagger', '../stanford-postagger/stanford-postagger.jar', encoding='utf8') 
 stagger = POSTagger('../stanford-postagger/models/spanish-distsim.tagger', '../stanford-postagger/stanford-postagger.jar', encoding='utf8') 
 
-englishCorpusFile = #'./es-en/train/europarl-v7.es-en.en' #'./es-en/train/small.en' #
-spanishCorpusFile = #'./es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.es' #
+englishCorpusFile = './es-en/train/europarl-v7.es-en.en' #'./es-en/train/small.en' #
+spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.es' #
 
 lmWeight = .0
 tmWeight = 1.-lmWeight
@@ -26,16 +26,43 @@ tmWeight = 1.-lmWeight
 wordRegex = re.compile(r"^(?:[^\W\d_]|')+$", re.UNICODE)
 
 
+# C -> CONJ						{CC , IN}
+# Z -> NUM						{cd, }
+# A -> ADJ						{JJ, JJR, JJS, LS, PDT}
+# V -> verb 					{MD, VB, VBD, VBG, VBN, VBP, VBZ}
+# N -> nouns 					{NN, NNP, NNPS, NNS}
+# P, DP -> pronoun		{PRP, PRP$, }
+# R -> ADV 						{RB, RBR, RBS, }
+# S -> preposition 		{RP}
+# I -> interjection 	{UH}
+# DT, DD -> wh 				{WDT, WP, WP$, WRB}
+# DI,DA -> DET 				{DT}
+# foreign word				{FW}
+# F (punc)
+
+# ENPOS = [
+# 	CONJ 	= set([CC , IN]),
+# 	NUM 	= set([CD]),
+# 	ADJ 	= set([JJ, JJR, JJS, LS, PDT]),
+# 	VERB 	= set([MD, VB, VBD, VBG, VBN, VBP, VBZ]),
+# 	NOUN 	= set([NN, NNP, NNPS, NNS]),
+# 	PRON 	= set([PRP, PRP$]),
+# 	ADV 	= set([RB, RBR, RBS]),
+# 	PREP 	= set([RP]),
+# 	UH		= set([UH]),
+# 	WH 		= set([WDT, WP, WP$, WRB]),
+# 	DET 	= set([DT])
+# ]
+
+
 class IBM_Model_1:
 	"""Class which trains IBM Model 1 and allows for testing"""
 
 
 	def __init__(self):
 		"""Sets initial variables for our algorithm"""
-		with open(englishCorpusFile, "rb") as f:
-			self.englishCorpus = pickle.load(f) #loadList(englishCorpusFile)
-		with open(spanishCorpusFile, "rb") as f:
-			self.spanishCorpus = pickle.load(f) #loadList(spanishCorpusFile)
+		self.englishCorpus = loadList(englishCorpusFile)
+		self.spanishCorpus = loadList(spanishCorpusFile)
 		self.englishVocabulary = set()
 		self.spanishVocabulary = set()
 		self.null = "<<NULL>>"
