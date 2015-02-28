@@ -321,7 +321,6 @@ def main():
 	# 	if i % 100 == 0: print i
 	# 	englishEuroParlTagged.append(etagger.tag(sentence.split()))
 	# pickle.dump(englishEuroParlTagged, open('./es-en/train/europarl-tagged.es-en.en', 'wb'))
-
 	
 	if "-train" in options:
 		start = time.clock()
@@ -349,7 +348,7 @@ def main():
 	if "-eval" in options:
 		bleu("./es-en/dev/newstest2012.en", "machine_translated")
 
-#main()
+main()
 
 
 # translation_nltk_tokenize
