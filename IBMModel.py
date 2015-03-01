@@ -238,13 +238,32 @@ class IBM_Model_1:
 		"""
 		inputWords = self.parseTagsInSentence(inputSentence, ESTagToPOS)
 		topk = self.generateKBestFromTM(10, inputWords)
-		for i,(sentence, tmLogProb) in enumerate(topk):
-			lmLogProb = self.getLMSentenceLogProb(sentence)
-			topk[i] = (sentence, lmWeight*lmLogProb + tmWeight*tmLogProb, lmLogProb, tmLogProb)
+		# for i,(sentence, tmLogProb) in enumerate(topk):
+		# 	lmLogProb = self.getLMSentenceLogProb(sentence)
+		# 	topk[i] = (sentence, lmWeight*lmLogProb + tmWeight*tmLogProb, lmLogProb, tmLogProb)
 		topk = sorted(topk, key=lambda sentenceAndLogProb: -sentenceAndLogProb[1])
-		returnSent = self.taggedToSentence(topk[0][0])
+		topSent = topk[0][0]
+		returnSent = ""
+		passOver = False
+		for i in range(len(topSent)-1):
+			if passOver:
+				passOver = False
+				continue
+			currentWord = topSent[i][0] 
+			currentTag = topSent[i][1]
+			if currentWord == u'\xbf':
+				continue
+			if currentTag == "NOUN" and topSent[i+1][1] == "ADJ":
+				returnSent+= topSent[i+1][0] + " " + currentWord + " "
+				passOver = True
+			else:
+				returnSent+= currentWord + " "
+
+
+		# returnSent = self.taggedToSentence(topk[0][0])
 		#print returnSent
-		return returnSent
+
+		return returnSent[:-1]
 
 	def buildTranslationDictionary(self):
 		print "Building translation dictionary"
@@ -313,8 +332,8 @@ class IBM_Model_1:
 					passOver = 0
 					continue 
 				currentWord = text[tag][0]
-				"""if currentWord == u'\xbf':
-					continue"""
+				if currentWord == u'\xbf':
+					continue
 				if text[tag][1][:2] == "NN" and tag != numWords-1 and text[tag+1][1][:2] == "JJ":
 					try:	#ideally want to append I think/ concatenate
 						newSentence = newSentence + (text[tag+1][0]).decode('utf8', "replace") + u" " + currentWord.decode('utf8', "replace") + u" "
