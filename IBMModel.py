@@ -30,6 +30,35 @@ tmWeight = 1.-lmWeight
 # Will have some quirks, but overall okay
 wordRegex = re.compile(r"^(?:[^\W\d_]|')+$", re.UNICODE)
 
+#ex. format (spanish literally translated to english - fluent english translation)
+
+# C -> CONJ						{CC , IN}
+# Z -> NUM						{cd, }
+# A -> ADJ						{JJ, JJR, JJS, LS, PDT}
+# V -> verb or adverb (ex. exited floating - floated out)	{MD, VB, VBD, VBG, VBN, VBP, VBZ}
+# N -> nouns or adj (ex. I have thirst - I am thirsty)		{NN, NNP, NNPS, NNS}
+# P, DP -> pronoun				{PRP, PRP$}
+# R -> ADV or verbs (ex. exited floating - floated out) 	{RB, RBR, RBS, }
+# S -> preposition 				{RP}
+# I -> interjection 			{UH}
+# DT, DD -> wh 					{WDT, WP, WP$, WRB}
+# DI,DA -> DET 					{DT}
+# foreign word					{FW}
+# F (punc)
+
+# ENPOS = [
+# 	CONJ 	= set([CC , IN]),
+# 	NUM 	= set([CD]),
+# 	ADJ 	= set([JJ, JJR, JJS, LS, PDT]),
+# 	VERB 	= set([MD, VB, VBD, VBG, VBN, VBP, VBZ]),
+# 	NOUN 	= set([NN, NNP, NNPS, NNS]),
+# 	PRON 	= set([PRP, PRP$]),
+# 	ADV 	= set([RB, RBR, RBS]),
+# 	PREP 	= set([RP]),
+# 	UH		= set([UH]),
+# 	WH 		= set([WDT, WP, WP$, WRB]),
+# 	DET 	= set([DT])
+# ]
 
 class IBM_Model_1:
 	"""Class which trains IBM Model 1 and allows for testing"""
