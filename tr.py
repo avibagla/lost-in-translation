@@ -60,7 +60,7 @@ def main():
 		translator = IBM_Model.readInTranslation(translationFileName)
 
 		#spanishDevFile = loadList("./es-en/dev/newstest2012.es")
-		with open("./es-en/dev/newstest2012-tagged.es.pickle", "rb") as f:
+		with open("./es-en/test/newstest2013-tagged.en.pickle", "rb") as f:
 			spanishDevFile = pickle.load(f)
 		translationOutput = open("machine_translated", 'w')
 		for sentence in spanishDevFile:
@@ -68,9 +68,9 @@ def main():
 		translationOutput.close()
 		
 		print "Translated", toc(tTrans)
-		bleu("./es-en/dev/newstest2012.en", "machine_translated")
+		bleu("./es-en/test/newstest2013.en", "machine_translated")
 	if "-eval" in options:
-		bleu("./es-en/dev/newstest2012.en", "machine_translated")
+		bleu("./es-en/test/newstest2013.en", "machine_translated")
 
 
 def loadList(file_name):

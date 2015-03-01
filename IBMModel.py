@@ -23,8 +23,8 @@ spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.e
 # Parts of Speech (POS) tagged
 PosTaggedEnglishCorpusFile = './es-en/train/europarl-tagged.en.pickle'
 PosTaggedSpanishCorpusFile = './es-en/train/europarl-tagged.es.pickle'
-penaltyForTranslatingToDifferentPOS = .1
-lmWeight = .0
+penaltyForTranslatingToDifferentPOS = .275
+lmWeight = .00
 tmWeight = 1.-lmWeight
 
 # Will have some quirks, but overall okay
@@ -58,7 +58,7 @@ class IBM_Model_1:
 			return [ ( tag[0].lower(), tagReducer(tag[1]) ) for tag in taggedSentence ]
 
 	def trainLM(self):
-		#self.lm.train() #self.englishCorpus
+		self.lm.train() #self.englishCorpus
 		pass
 
 	def train(self, iterations):
@@ -239,12 +239,22 @@ class IBM_Model_1:
 		inputWords = self.parseTagsInSentence(inputSentence, ESTagToPOS)
 		topk = self.generateKBestFromTM(10, inputWords)
 		for i,(sentence, tmLogProb) in enumerate(topk):
-			lmLogProb = self.getLMSentenceLogProb(sentence)
-			topk[i] = (sentence, lmWeight*lmLogProb + tmWeight*tmLogProb, lmLogProb, tmLogProb)
+			sentence = self.swapNounAdjConstructions(sentence)
+		 	lmLogProb = self.getLMSentenceLogProb(self.taggedToSentence(sentence))
+		 	topk[i] = (sentence, lmWeight*lmLogProb + tmWeight*tmLogProb, lmLogProb, tmLogProb)
 		topk = sorted(topk, key=lambda sentenceAndLogProb: -sentenceAndLogProb[1])
+
 		returnSent = self.taggedToSentence(topk[0][0])
-		#print returnSent
 		return returnSent
+
+	def swapNounAdjConstructions(self, sentence):
+
+		for i in xrange(len(sentence) - 1):
+			word, tag =	sentence[i]
+			if tag == "NOUN" and sentence[i+1][1] == "ADJ":
+				sentence[i], sentence[i+1] = sentence[i+1], sentence[i]
+		return filter(lambda token: token[0] != u'\xbf', sentence)
+
 
 	def buildTranslationDictionary(self):
 		print "Building translation dictionary"
