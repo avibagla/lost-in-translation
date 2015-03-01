@@ -61,29 +61,16 @@ def main():
 		translator = IBM_Model.readInTranslation(translationFileName)
 
 		#spanishDevFile = loadList("./es-en/dev/newstest2012.es")
-		with open("./es-en/dev/newstest2012-tagged.es.pickle", "rb") as f:
+		with open("./es-en/test/newstest2013-tagged.en.pickle", "rb") as f:
 			spanishDevFile = pickle.load(f)
 		translationOutput = open("machine_translated", 'w')
 		for sentence in spanishDevFile:
 			translationOutput.write("%s\n"%IBM_Model.predict(sentence).encode('utf8'))
 		translationOutput.close()
 		print "Translated", toc(tTrans)
-		
-	if "-postProcess" in options:
-		"""Here we put in the file of the machine translated work to be post processed.. Right now my non existant
-		   Sample in this directory is getting the glory. Note it must be load listed before getting processed."""
-		print "Post Processing"
-		tPost = tic()
-		translationOutput = loadList("machine_translated")
-		translationOutput = IBM_Model.postProcess(translationOutput)
-		f = open('machine_translated', 'wb')
-		for sentence in translationOutput:
-			f.write("%s\n"%sentence)
-		f.close()
-		print "processed", toc(tPost)
 
 	if "-eval" in options:
-		bleu("./es-en/dev/newstest2012.en", "machine_translated")
+		bleu("./es-en/test/newstest2013.en", "machine_translated")
 
 
 def loadList(file_name):
