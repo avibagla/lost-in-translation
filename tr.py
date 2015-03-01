@@ -34,7 +34,7 @@ def main():
 	options = getArguments(sys.argv)
 	print "Evaluation flags:",  options
 	IBM_Model = None
-	if "-train" in options or "-dict" in options:
+	if "-train" in options or "-dict" or "-postProcess" in options:
 		IBM_Model = IBM_Model_1()
 
 	if "-train" in options:
@@ -62,13 +62,22 @@ def main():
 		for sentence in spanishDevFile:
 			translationOutput.write("%s\n"%IBM_Model.predict(sentence).encode('utf8'))
 		translationOutput.close()
+		print "Translated", toc(tTrans)
 		
+	if "-postProcess" in options:
 		"""Here we put in the file of the machine translated work to be post processed.. Right now my non existant
 		   Sample in this directory is getting the glory. Note it must be load listed before getting processed."""
-		#translationOutput = loadList("KaitlynsTranslatedSample.txt")
-		#translationOutput = postProcess(translationOutput)
+		print "Post Processing"
+		tPost = tic()
+		translationOutput = loadList("machine_translated")
+		translationOutput = IBM_Model.postProcess(translationOutput)
+		f = open('machine_translated', 'wb')
+		for sentence in translationOutput:
+			f.write("%s\n"%sentence)
+		f.close()
+		print "processed", toc(tPost)
 
-		print "Translated", toc(tTrans)
+		
 
 	if "-eval" in options:
 		bleu("./es-en/dev/newstest2012.en", "machine_translated")

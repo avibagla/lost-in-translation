@@ -72,8 +72,9 @@ def run(ref_filename, eval_filename):
 			for ref_line in f_ref:
 				eval_line = f_eval.readline()
 				if len(eval_line) == 0:
-					print "Error: The output file should at least have the same number of sentences as the reference file."
-					sys.exit(0)
+					print "Error: The output file should at least have the same number of sentences as the reference file.", ref_line
+					# sys.exit(0)
+					continue
 
 				t1, t2 = bleu_for_one(ref_line, eval_line)
 				if t1 is not None:
