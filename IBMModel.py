@@ -12,6 +12,7 @@ import re
 import os
 # from nltk.corpus import reuters
 from nltk.tag.stanford import POSTagger
+from pos_matching import ESTagToPOS, ENTagToPOS # Imports maps for EN and ES POS to a 'universal' code
 
 etagger = POSTagger('../stanford-postagger/models/english-left3words-distsim.tagger', '../stanford-postagger/stanford-postagger.jar', encoding='utf8') 
 stagger = POSTagger('../stanford-postagger/models/spanish-distsim.tagger', '../stanford-postagger/stanford-postagger.jar', encoding='utf8') 
@@ -22,41 +23,12 @@ spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.e
 # Parts of Speech (POS) tagged
 PosTaggedEnglishCorpusFile = './es-en/train/europarl-tagged.en.pickle'
 PosTaggedSpanishCorpusFile = './es-en/train/europarl-tagged.es.pickle'
-
+penaltyForTranslatingToDifferentPOS = .2
 lmWeight = .0
 tmWeight = 1.-lmWeight
 
 # Will have some quirks, but overall okay
 wordRegex = re.compile(r"^(?:[^\W\d_]|')+$", re.UNICODE)
-
-
-# C -> CONJ						{CC , IN}
-# Z -> NUM						{cd, }
-# A -> ADJ						{JJ, JJR, JJS, LS, PDT}
-# V -> verb 					{MD, VB, VBD, VBG, VBN, VBP, VBZ}
-# N -> nouns 					{NN, NNP, NNPS, NNS}
-# P, DP -> pronoun		{PRP, PRP$, }
-# R -> ADV 						{RB, RBR, RBS, }
-# S -> preposition 		{RP}
-# I -> interjection 	{UH}
-# DT, DD -> wh 				{WDT, WP, WP$, WRB}
-# DI,DA -> DET 				{DT}
-# foreign word				{FW}
-# F (punc)
-
-# ENPOS = [
-# 	CONJ 	= set([CC , IN]),
-# 	NUM 	= set([CD]),
-# 	ADJ 	= set([JJ, JJR, JJS, LS, PDT]),
-# 	VERB 	= set([MD, VB, VBD, VBG, VBN, VBP, VBZ]),
-# 	NOUN 	= set([NN, NNP, NNPS, NNS]),
-# 	PRON 	= set([PRP, PRP$]),
-# 	ADV 	= set([RB, RBR, RBS]),
-# 	PREP 	= set([RP]),
-# 	UH		= set([UH]),
-# 	WH 		= set([WDT, WP, WP$, WRB]),
-# 	DET 	= set([DT])
-# ]
 
 
 class IBM_Model_1:
@@ -69,14 +41,21 @@ class IBM_Model_1:
 
 		self.englishVocabulary = set()
 		self.spanishVocabulary = set()
-		self.null = "<<NULL>>"
+		self.null = ("<<NULL>>", "NULL")
 		self.lm = lm()
 		for i in range(len(self.PosTaggedEnglishCorpus)):
-			print self.PosTaggedSpanishCorpus[i]
-			self.PosTaggedEnglishCorpus[i]
-			# self.englishVocabulary |= set(self.parseTagsInSentence(self.PosTaggedEnglishCorpus[i]))
-			self.spanishVocabulary |= set(self.parseTagsInSentence(self.PosTaggedSpanishCorpus[i]))
+			self.englishVocabulary |= set(self.parseTagsInSentenceNoPunc(self.PosTaggedEnglishCorpus[i], ENTagToPOS))
+			self.spanishVocabulary |= set(self.parseTagsInSentenceNoPunc(self.PosTaggedSpanishCorpus[i], ESTagToPOS))
 		self.englishVocabulary.add(self.null)
+		print len(self.englishVocabulary)
+		print len(self.spanishVocabulary)
+
+	def parseTagsInSentenceNoPunc(self, taggedSentence, tagReducer):
+		filteredSent = filter(lambda token: wordRegex.match(token[0]) is not None, taggedSentence)
+		return [ ( tag[0].lower(), tagReducer(tag[1]) ) for tag in filteredSent ]
+
+	def parseTagsInSentence(self, taggedSentence, tagReducer):
+			return [ ( tag[0].lower(), tagReducer(tag[1]) ) for tag in taggedSentence ]
 
 	def trainLM(self):
 		#self.lm.train() #self.englishCorpus
@@ -114,7 +93,7 @@ class IBM_Model_1:
 		print "table is built", time.clock() - start
 
 		#Zip corpuses and iterate through E step and M step
-		zippedCorpuses = zip(self.englishCorpus, self.spanishCorpus)
+		zippedCorpuses = zip(self.PosTaggedEnglishCorpus, self.PosTaggedSpanishCorpus)
 		
 		for i in xrange(1, iterations+1):
 			start = time.clock()
@@ -130,6 +109,7 @@ class IBM_Model_1:
 	def Estep(self, trainingPhrases):
 		"""
 			Runs the Expectation Step of the IBM Model 1 algorithm
+			All sentence must already be tokenized
 			i.e. 
 			for each sentence pair
 				for each e in E and f in F
@@ -139,9 +119,8 @@ class IBM_Model_1:
 		self.totalF = 	zeros(len(self.spanishVocabulary), dtype = float64)
 
 		for englishSentence, foreignSentence in trainingPhrases:
-			# Tokenize sentences and add NULL to englishSentence
-			englishSentence = self.tokenizeNoPunc(englishSentence) + [self.null]
-			foreignSentence = self.tokenizeNoPunc(foreignSentence)
+			englishSentence = self.parseTagsInSentenceNoPunc(englishSentence, ENTagToPOS) + [self.null]
+			foreignSentence = self.parseTagsInSentenceNoPunc(foreignSentence, ESTagToPOS)
 
 			for e in englishSentence:
 				sTotalE = 0
@@ -187,7 +166,7 @@ class IBM_Model_1:
 				sentenceQueue.put((-logprob, newCandidateIndices))
 
 		for i in xrange(len(generatedSentences)):
-			nthBest, logProb = generatedSentences[i]
+		 	nthBest, logProb = generatedSentences[i]
 			generatedSentences[i] = (self.englishSentenceUsing(foreignSentence, nthBest), logProb)
 
 		return generatedSentences
@@ -200,17 +179,14 @@ class IBM_Model_1:
 				e = self.translationDictionary[f][nthBest[j]][0]
 			if e != self.null:
 				englishSentence.append(e)
-		return " ".join(englishSentence)
+		return englishSentence #" ".join(englishSentence)
+
+	def taggedToSentence(self, taggedList):
+		sentence = [taggedPair[0] for taggedPair in taggedList]
+		return " ".join(sentence)
 
 	def tokenize(self, sentence):
 		return sentence.lower().split()
-
-	def parseTagsInSentence(self, taggedSentence):
-		parsedTaggedSentence = []
-		for tag in taggedSentence:
-			filter(lambda token: wordRegex.match(token) is not None
-			if not : 
-				parsedTaggedSentence.append((tag[0].lower(),tag[1].lower()))
 
 	def removeNonWords(self, sentence):
 		return filter(lambda token: wordRegex.match(token) is not None, sentence)
@@ -239,7 +215,12 @@ class IBM_Model_1:
 		for i in xrange(len(foreignSentence)):
 			f = foreignSentence[i]
 			if f in self.translationDictionary: # only calculate words we've seen
-				totalLogProb += self.translationDictionary[foreignSentence[i]][nthBest[i]][1]
+				originalPOS = foreignSentence[i][1]
+				translation = self.translationDictionary[foreignSentence[i]][nthBest[i]]
+				penaltyForTranslatingToDifferentPOS
+				totalLogProb += translation[1]
+				if originalPOS != translation[0][1] and translation[0] != self.null:
+					totalLogProb -= penaltyForTranslatingToDifferentPOS
 		return totalLogProb
 
 	def predict(self, inputSentence):
@@ -249,13 +230,15 @@ class IBM_Model_1:
 			Pre-condition: IBM Model training step is completed
 			Pre-condition: Translation dictionary must be built before this method is called
 		"""
-		inputWords = self.tokenize(inputSentence)
+		inputWords = self.parseTagsInSentence(inputSentence, ESTagToPOS)
 		topk = self.generateKBestFromTM(10, inputWords)
-		for i,(sentence, tmLogProb) in enumerate(topk):
-			lmLogProb = self.getLMSentenceLogProb(sentence)
-			topk[i] = (sentence, lmWeight*lmLogProb + tmWeight*tmLogProb, lmLogProb, tmLogProb)
+		#for i,(sentence, tmLogProb) in enumerate(topk):
+			#lmLogProb = self.getLMSentenceLogProb(sentence)
+			#topk[i] = (sentence, lmWeight*lmLogProb + tmWeight*tmLogProb, lmLogProb, tmLogProb)
 		topk = sorted(topk, key=lambda sentenceAndLogProb: -sentenceAndLogProb[1])
-		return topk[0][0]
+		returnSent = self.taggedToSentence(topk[0][0])
+		#print returnSent
+		return returnSent
 
 	def buildTranslationDictionary(self):
 		print "Building translation dictionary"

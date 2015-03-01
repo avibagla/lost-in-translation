@@ -2,6 +2,7 @@ from IBMModel import IBM_Model_1
 from bleu_score import run as bleu
 import time
 import sys #for argument input
+import cPickle as pickle
 
 """
 	tr is a convenient interface into the IBM model and auxilliary tools
@@ -34,6 +35,7 @@ def main():
 	options = getArguments(sys.argv)
 	print "Evaluation flags:",  options
 	IBM_Model = None
+
 	if "-train" in options or "-dict" in options:
 		IBM_Model = IBM_Model_1()
 
@@ -57,14 +59,16 @@ def main():
 		translationFileName = options["-dict"]
 		translator = IBM_Model.readInTranslation(translationFileName)
 
-		spanishDevFile = loadList("./es-en/dev/newstest2012.es")
+		#spanishDevFile = loadList("./es-en/dev/newstest2012.es")
+		with open("./es-en/dev/newstest2012-tagged.es.pickle", "rb") as f:
+			spanishDevFile = pickle.load(f)
 		translationOutput = open("machine_translated", 'w')
 		for sentence in spanishDevFile:
 			translationOutput.write("%s\n"%IBM_Model.predict(sentence).encode('utf8'))
 		translationOutput.close()
 		
 		print "Translated", toc(tTrans)
-
+		bleu("./es-en/dev/newstest2012.en", "machine_translated")
 	if "-eval" in options:
 		bleu("./es-en/dev/newstest2012.en", "machine_translated")
 
