@@ -63,6 +63,11 @@ def main():
 			translationOutput.write("%s\n"%IBM_Model.predict(sentence).encode('utf8'))
 		translationOutput.close()
 		
+		"""Here we put in the file of the machine translated work to be post processed.. Right now my non existant
+		   Sample in this directory is getting the glory. Note it must be load listed before getting processed."""
+		#translationOutput = loadList("KaitlynsTranslatedSample.txt")
+		#translationOutput = postProcess(translationOutput)
+
 		print "Translated", toc(tTrans)
 
 	if "-eval" in options:

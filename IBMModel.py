@@ -309,7 +309,36 @@ def loadList(file_name):
 
 
 def postProcess(translationOutput):
-	pass
+	newOutput = u""
+	for line in translationOutput:
+		text = word_tokenize(line)
+		text = nltk.pos_tag(text)
+		numWords = len(text)
+		newSentence = u""
+		passOver = 0
+		for tag in range(numWords):
+			if passOver == 1:
+				passOver = 0
+				continue 
+			currentWord = text[tag][0]
+			"""if currentWord == u'\xbf':
+				continue"""
+			if text[tag][1] == "NN" and tag != numWords-1 and text[tag+1][1] == "JJ":
+				try:	#ideally want to append I think/ concatenate
+					newSentence = newSentence + (text[tag+1][0]).decode('utf8', "replace") + u" " + currentWord.decode('utf8', "replace") + u" "
+					passOver = 1
+				except UnicodeEncodeError:
+					#don't really want to pass - want to get the actual word. Shouldn't even really have a try statement at all really
+					pass
+			else:
+				try:	#ideally want to append I think/ concatenate
+					newSentence = newSentence + currentWord.decode('utf8', "replace") + u" "
+				except UnicodeEncodeError:
+					#don't really want to pass - want to get the actual word. Shouldn't even really have a try statement at all really
+					pass
+		#ideally want to append I think/ concatenate
+		newOutput = newOutput + newSentence + "\n"
+	return newOutput		
 
 
 # translation_nltk_tokenize
