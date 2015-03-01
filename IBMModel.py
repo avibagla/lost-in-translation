@@ -25,19 +25,20 @@ tmWeight = 1.-lmWeight
 # Will have some quirks, but overall okay
 wordRegex = re.compile(r"^(?:[^\W\d_]|')+$", re.UNICODE)
 
+#ex. format (spanish literally translated to english - fluent english translation)
 
 # C -> CONJ						{CC , IN}
 # Z -> NUM						{cd, }
 # A -> ADJ						{JJ, JJR, JJS, LS, PDT}
-# V -> verb 					{MD, VB, VBD, VBG, VBN, VBP, VBZ}
-# N -> nouns 					{NN, NNP, NNPS, NNS}
-# P, DP -> pronoun		{PRP, PRP$, }
-# R -> ADV 						{RB, RBR, RBS, }
-# S -> preposition 		{RP}
-# I -> interjection 	{UH}
-# DT, DD -> wh 				{WDT, WP, WP$, WRB}
-# DI,DA -> DET 				{DT}
-# foreign word				{FW}
+# V -> verb or adverb (ex. exited floating - floated out)	{MD, VB, VBD, VBG, VBN, VBP, VBZ}
+# N -> nouns or adj (ex. I have thirst - I am thirsty)		{NN, NNP, NNPS, NNS}
+# P, DP -> pronoun				{PRP, PRP$}
+# R -> ADV or verbs (ex. exited floating - floated out) 	{RB, RBR, RBS, }
+# S -> preposition 				{RP}
+# I -> interjection 			{UH}
+# DT, DD -> wh 					{WDT, WP, WP$, WRB}
+# DI,DA -> DET 					{DT}
+# foreign word					{FW}
 # F (punc)
 
 # ENPOS = [
