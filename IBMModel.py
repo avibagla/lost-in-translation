@@ -23,7 +23,7 @@ spanishCorpusFile = './es-en/train/europarl-v7.es-en.es' #'./es-en/train/small.e
 # Parts of Speech (POS) tagged
 PosTaggedEnglishCorpusFile = './es-en/train/europarl-tagged.en.pickle'
 PosTaggedSpanishCorpusFile = './es-en/train/europarl-tagged.es.pickle'
-penaltyForTranslatingToDifferentPOS = .2
+penaltyForTranslatingToDifferentPOS = .1
 lmWeight = .0
 tmWeight = 1.-lmWeight
 
@@ -115,6 +115,7 @@ class IBM_Model_1:
 				for each e in E and f in F
 					Add the total contribution of the sentences E,F to the word pair: tranlate(e,f)
 		"""
+		differentPOSPenalty = 0.8
 		newTranslate = 	zeros((len(self.englishVocabulary),len(self.spanishVocabulary)), dtype = float64)
 		self.totalF = 	zeros(len(self.spanishVocabulary), dtype = float64)
 
@@ -126,10 +127,15 @@ class IBM_Model_1:
 				sTotalE = 0
 				eidx = self.englishToIndex[e]
 				for f in foreignSentence:
+					multiplier = 1.
+					if f[1]!= self.indexToEnglish[eidx][1] and self.indexToEnglish[eidx] != self.null:
+						multiplier = differentPOSPenalty
 					sTotalE += self.translate[eidx, self.spanishToIndex[f]] 
 				for f in foreignSentence:
 					sidx = self.spanishToIndex[f]
 					weightedCount = self.translate[eidx, sidx]/sTotalE
+					if f[1]!= self.indexToEnglish[eidx][1] and self.indexToEnglish[eidx] != self.null:
+						weightedCount *= differentPOSPenalty
 					newTranslate[eidx, sidx] += weightedCount
 					self.totalF[sidx] += weightedCount
 		self.translate = newTranslate
@@ -232,9 +238,9 @@ class IBM_Model_1:
 		"""
 		inputWords = self.parseTagsInSentence(inputSentence, ESTagToPOS)
 		topk = self.generateKBestFromTM(10, inputWords)
-		#for i,(sentence, tmLogProb) in enumerate(topk):
-			#lmLogProb = self.getLMSentenceLogProb(sentence)
-			#topk[i] = (sentence, lmWeight*lmLogProb + tmWeight*tmLogProb, lmLogProb, tmLogProb)
+		for i,(sentence, tmLogProb) in enumerate(topk):
+			lmLogProb = self.getLMSentenceLogProb(sentence)
+			topk[i] = (sentence, lmWeight*lmLogProb + tmWeight*tmLogProb, lmLogProb, tmLogProb)
 		topk = sorted(topk, key=lambda sentenceAndLogProb: -sentenceAndLogProb[1])
 		returnSent = self.taggedToSentence(topk[0][0])
 		#print returnSent
@@ -319,6 +325,10 @@ def postProcess(translationOutput):
 # translation_no_punc vanilla
 # BLEU-1 score: 50.912483
 # BLEU-2 score: 11.267491
+
+# Translation alignment.7 predict.1
+# BLEU-1 score: 51.070620
+# BLEU-2 score: 11.411416
 
 # translation_no_punc tm.9 lm.1
 # BLEU-1 score: 50.701649
